@@ -124,7 +124,7 @@ BOOL CAgeDlg::OnInitDialog()
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
 		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowTextA("Select file to decrypt");
 		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowTextA("Decrypt");
-		this->GetDlgItem(IDC_ARMOR)->EnableWindow(false);
+		this->GetDlgItem(IDC_ARMOR)->ShowWindow(false);
 		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->EnableWindow(false);
 
 		if (__argc > 2) { // second arg should be filename
@@ -388,7 +388,8 @@ void CAgeDlg::OnBnClickedPassphrase()
 	this->GetDlgItem(PASSPHRASE_LABEL)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(RECIPIENT_LABEL)->ShowWindow(SW_HIDE);
 	this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->ShowWindow(SW_HIDE);
-	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->EnableWindow(false);
+	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->ShowWindow(false);
+	this->GetDlgItem(IDENTITY_FILE_LABEL)->ShowWindow(false);
 }
 
 
@@ -398,7 +399,8 @@ void CAgeDlg::OnBnClickedIdentityRecipient()
 	this->GetDlgItem(PASSPHRASE_LABEL)->ShowWindow(SW_HIDE);
 	this->GetDlgItem(RECIPIENT_LABEL)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->ShowWindow(SW_SHOW);
-	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->EnableWindow(true);
+	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->ShowWindow(true);
+	this->GetDlgItem(IDENTITY_FILE_LABEL)->ShowWindow(true);
 }
 
 
