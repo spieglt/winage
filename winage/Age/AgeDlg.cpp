@@ -355,7 +355,7 @@ void CAgeDlg::OnBnClickedButton()
 	}
 	INT_PTR outputRes = outputDiag->DoModal();
 	if (outputRes == IDOK) {
-		output = outputDiag->GetFileName();
+		output = outputDiag->GetPathName();
 		if (!strcmp(output, "")) {
 			return;
 		}
