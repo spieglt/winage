@@ -159,7 +159,7 @@ BOOL CAgeDlg::OnInitDialog()
 			"txt",
 			"age-identity",
 			OFN_OVERWRITEPROMPT,
-			NULL,
+			"Text files|*.txt||",
 			NULL,
 			0,
 			TRUE
@@ -339,7 +339,7 @@ void CAgeDlg::OnBnClickedButton()
 			NULL,
 			NULL,
 			0,
-			false
+			TRUE
 		);
 	} else {
 		outputDiag = new CFileDialog(
@@ -347,10 +347,10 @@ void CAgeDlg::OnBnClickedButton()
 			"age",
 			outputName,
 			OFN_OVERWRITEPROMPT,
-			"Age files (.age)|*.age||",
+			"Age files|*.age||",
 			NULL,
 			0,
-			false
+			TRUE
 		);
 	}
 	INT_PTR outputRes = outputDiag->DoModal();
