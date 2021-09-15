@@ -1,3 +1,6 @@
+mod identity;
+mod error;
+
 use age::{
     armor::{ArmoredReader, ArmoredWriter, Format},
     cli_common::{
@@ -14,7 +17,6 @@ use rand::{
 use rust_embed::RustEmbed;
 use secrecy::SecretString;
 
-mod error;
 use std::ffi::{CStr, CString};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
@@ -133,6 +135,19 @@ pub unsafe extern "C" fn get_decryption_mode(input: *const c_char) -> *const c_c
         age::Decryptor::Passphrase(_) => return CString::new("passphrase").unwrap().into_raw(),
         age::Decryptor::Recipients(_) => return CString::new("recipients").unwrap().into_raw(),
     };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn generate_identity(output_path: *const c_char) -> *const c_char {
+    let p = if !output_path.is_null() {
+        CStr::from_ptr(output_path).to_string_lossy().into_owned()
+    } else {
+        "".to_string()
+    };
+    match identity::generate(&p) {
+        Ok(()) => CString::new("ok").unwrap().into_raw(),
+        Err(e) => CString::new(format!("{}", e)).unwrap().into_raw(),
+    }
 }
 
 unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {

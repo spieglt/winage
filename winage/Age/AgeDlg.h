@@ -62,4 +62,5 @@ extern "C" {
 	char* get_passphrase();
 	void free_rust_string(char* ptr);
 	char* get_decryption_mode(char* input);
+	char* generate_identity(char* output_path);
 }

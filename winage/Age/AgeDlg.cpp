@@ -153,6 +153,36 @@ BOOL CAgeDlg::OnInitDialog()
 			free_rust_string(mode);
 		}
 	}
+	if (__argc > 1 && !strcmp(__argv[1], "generate")) {
+		CFileDialog* outputDiag = new CFileDialog(
+			FALSE,
+			"txt",
+			"age-identity",
+			OFN_OVERWRITEPROMPT,
+			NULL,
+			NULL,
+			0,
+			TRUE
+		);
+		INT_PTR outputRes = outputDiag->DoModal();
+		if (outputRes == IDOK) {
+			CString output = outputDiag->GetPathName();
+			if (strcmp(output.GetBuffer(), "")) {
+				char* retMessage = generate_identity(output.GetBuffer());
+				if (!strcmp(retMessage, "ok")) {
+					CString msg = "Identity file successfully created at: ";
+					msg += output;
+					MessageBox(msg, "Identity created", MB_OK | MB_ICONINFORMATION);
+				}
+				else {
+					CString msg = "Error generating identity file: ";
+					msg += retMessage;
+					MessageBox(msg, "Error", MB_OK | MB_ICONERROR);
+				}
+				free_rust_string(retMessage);
+			}
+		}
+	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 }

@@ -21,12 +21,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1ACBC56685DEA103445B021C1FA75265"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_2DA3CF01AC0EDFD02DE8488CDDF1F7A6"
         "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
         "MsmSig" = "8:_UNDEFINED"
@@ -152,26 +146,6 @@
             {
             "SourcePath" = "8:OLEACC.dll"
             "TargetName" = "8:OLEACC.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1ACBC56685DEA103445B021C1FA75265"
-            {
-            "SourcePath" = "8:oledlg.dll"
-            "TargetName" = "8:oledlg.dll"
             "Tag" = "8:"
             "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
             "Condition" = "8:"
@@ -515,6 +489,84 @@
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:[TARGETDIR]Age.exe encrypt \"%1\""
                                                     }
+                                                }
+                                            }
+                                        }
+                                        "Values"
+                                        {
+                                        }
+                                    }
+                                }
+                                "Values"
+                                {
+                                }
+                            }
+                        }
+                        "Values"
+                        {
+                        }
+                    }
+                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_F7FF91918BF5422A83AE46722DA68295"
+                    {
+                    "Name" = "8:Directory"
+                    "Condition" = "8:"
+                    "AlwaysCreate" = "11:FALSE"
+                    "DeleteAtUninstall" = "11:FALSE"
+                    "Transitive" = "11:FALSE"
+                        "Keys"
+                        {
+                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_5AF3E508632E48F685389968C9596227"
+                            {
+                            "Name" = "8:Background"
+                            "Condition" = "8:"
+                            "AlwaysCreate" = "11:FALSE"
+                            "DeleteAtUninstall" = "11:FALSE"
+                            "Transitive" = "11:FALSE"
+                                "Keys"
+                                {
+                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_65F14F3DA57B4910AA567CD23796E687"
+                                    {
+                                    "Name" = "8:shell"
+                                    "Condition" = "8:"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "Transitive" = "11:FALSE"
+                                        "Keys"
+                                        {
+                                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_57E7E7080B294A95B5C085F5DEDC595E"
+                                            {
+                                            "Name" = "8:Generate new age identity"
+                                            "Condition" = "8:"
+                                            "AlwaysCreate" = "11:FALSE"
+                                            "DeleteAtUninstall" = "11:FALSE"
+                                            "Transitive" = "11:FALSE"
+                                                "Keys"
+                                                {
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_A68E4854A8F64646ACCC42BC3E32427F"
+                                                    {
+                                                    "Name" = "8:command"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:FALSE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5906B550F63443ADAFE810D5E3347898"
+                                                            {
+                                                            "Name" = "8:"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Age.exe generate"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                "Values"
+                                                {
                                                 }
                                             }
                                         }
@@ -967,7 +1019,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5A11402233FC4A58B989C92F008074D6"
             {
-            "SourcePath" = "8:..\\x64\\Debug\\Age.exe"
+            "SourcePath" = "8:..\\x64\\Release\\Age.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
