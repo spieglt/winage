@@ -244,6 +244,10 @@ void CAgeDlg::OnBnClickedButton()
 	LPTSTR identityFile = NULL;
 	LPTSTR inputFile = NULL;
 	LPTSTR passphrase = NULL;
+	CString output;
+	char* outputName = NULL;
+	struct COptions* cOptions = (struct COptions*)malloc(sizeof(struct COptions));
+	MALLOC_CHECK(cOptions);
 
 	BOOL encrypting = !(__argc > 1 && !(strcmp(__argv[1], "decrypt")));
 	BOOL usingPassphrase = this->IsDlgButtonChecked(RADIO_PASSPHRASE);
@@ -257,15 +261,14 @@ void CAgeDlg::OnBnClickedButton()
 	this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowTextA(inputFile, pathSize);
 	if (!strcmp(inputFile, "")) {
 		MessageBox("Must select file to encrypt or decrypt.", "No Input File Selected", MB_OK | MB_ICONERROR);
-		return;
+		goto cleanup;
 	}
 	if (!PathFileExists(inputFile)) {
 		MessageBox("Input path does not point to a valid file.", "Must Select Input File", MB_OK | MB_ICONERROR);
-		return;
+		goto cleanup;
 	}
 
 	// make default output filename
-	char* outputName;
 	if (encrypting) { // add ".age" extension
 		outputName = (char*)malloc(bigSize + 4);
 		MALLOC_CHECK(outputName);
@@ -301,7 +304,7 @@ void CAgeDlg::OnBnClickedButton()
 
 		if (!strcmp(recipient, "") && !strcmp(identityFile, "")) {
 			MessageBox("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities.", "Missing Identity/Recipent", MB_OK | MB_ICONERROR);
-			return;
+			goto cleanup;
 		}
 	}
 	else if (this->IsDlgButtonChecked(RADIO_PASSPHRASE)) {
@@ -323,12 +326,11 @@ void CAgeDlg::OnBnClickedButton()
 
 		if (!encrypting && !strcmp(passphrase, "")) {
 			MessageBox("Must provide decryption passphrase.", "Missing Passphrase", MB_OK | MB_ICONERROR);
-			return;
+			goto cleanup;
 		}
 	}
 
 	// select output filename
-	CString output;
 	CFileDialog* outputDiag = NULL;
 	if (!encrypting) {
 		outputDiag = new CFileDialog(
@@ -357,16 +359,14 @@ void CAgeDlg::OnBnClickedButton()
 	if (outputRes == IDOK) {
 		output = outputDiag->GetPathName();
 		if (!strcmp(output, "")) {
-			return;
+			goto cleanup;
 		}
 	}
 	else {
-		return;
+		goto cleanup;
 	}
 
 	// fill out options for rust
-	struct COptions* cOptions = (struct COptions*)malloc(sizeof(struct COptions));
-	MALLOC_CHECK(cOptions);
 	memset(cOptions, 0, sizeof(struct COptions));
 	cOptions->input = inputFile;
 	cOptions->encrypt = encrypting;
@@ -392,6 +392,7 @@ void CAgeDlg::OnBnClickedButton()
 	free_rust_string(res);
 	//printf("%s\n", res);
 
+cleanup:
 	free(inputFile);
 	free(outputName);
 	free(recipient);
