@@ -1,11 +1,9 @@
-mod identity;
 mod error;
+mod identity;
 
 use age::{
     armor::{ArmoredReader, ArmoredWriter, Format},
-    cli_common::{
-        file_io, read_identities, UiCallbacks,
-    },
+    cli_common::{file_io, read_identities, UiCallbacks},
     plugin, Identity, IdentityFile, Recipient,
 };
 use i18n_embed::fluent::{fluent_language_loader, FluentLanguageLoader};
@@ -42,12 +40,11 @@ macro_rules! fl {
     }};
 }
 
-
 #[repr(C)]
 #[derive(Debug)]
 pub struct COptions {
     input: *const c_char,
-    encrypt: c_int, // bool: 0 == decrypting, 1 == encrypting
+    encrypt: c_int,          // bool: 0 == decrypting, 1 == encrypting
     using_passphrase: c_int, // bool: 0 == identity/recipients, 1 == passphrase
     passphrase: *const c_char,
     max_work_factor: c_uchar,
@@ -74,7 +71,6 @@ struct AgeOptions {
 
 #[no_mangle]
 pub extern "C" fn wrapper(c_opts: *mut COptions) -> *const c_char {
-
     let opts: AgeOptions;
     unsafe {
         opts = convert(c_opts);
@@ -82,12 +78,16 @@ pub extern "C" fn wrapper(c_opts: *mut COptions) -> *const c_char {
 
     if opts.encrypt {
         match encrypt(&opts) {
-            Ok(()) => CString::new(format!("Successfully encrypted {}", opts.output)).unwrap().into_raw(),
+            Ok(()) => CString::new(format!("Successfully encrypted {}", opts.output))
+                .unwrap()
+                .into_raw(),
             Err(e) => CString::new(format!("Error: {}", e)).unwrap().into_raw(),
         }
     } else {
         match decrypt(&opts) {
-            Ok(()) => CString::new(format!("Successfully decrypted {}", opts.output)).unwrap().into_raw(),
+            Ok(()) => CString::new(format!("Successfully decrypted {}", opts.output))
+                .unwrap()
+                .into_raw(),
             Err(e) => CString::new(format!("Error: {}", e)).unwrap().into_raw(),
         }
     }
@@ -97,19 +97,20 @@ pub extern "C" fn wrapper(c_opts: *mut COptions) -> *const c_char {
 pub extern "C" fn get_passphrase() -> *const c_char {
     let between = Uniform::from(0..2048);
     let mut rng = OsRng;
-    let passphrase = (0..10).map(|_| {
-        BIP39_WORDLIST
-            .lines()
-            .nth(between.sample(&mut rng))
-            .expect("index is in range")
-    })
-    .fold(String::new(), |acc, s| {
-        if acc.is_empty() {
-            acc + s
-        } else {
-            acc + "-" + s
-        }
-    });
+    let passphrase = (0..10)
+        .map(|_| {
+            BIP39_WORDLIST
+                .lines()
+                .nth(between.sample(&mut rng))
+                .expect("index is in range")
+        })
+        .fold(String::new(), |acc, s| {
+            if acc.is_empty() {
+                acc + s
+            } else {
+                acc + "-" + s
+            }
+        });
     CString::new(passphrase).unwrap().into_raw()
 }
 
@@ -125,11 +126,19 @@ pub unsafe extern "C" fn get_decryption_mode(input: *const c_char) -> *const c_c
     let rust_input = CStr::from_ptr(input).to_string_lossy().into_owned();
     let input_file = match file_io::InputReader::new(Some(rust_input)) {
         Ok(i) => i,
-        Err(e) => return CString::new(format!("InputReader::new() failed: {}", e)).unwrap().into_raw(),
+        Err(e) => {
+            return CString::new(format!("InputReader::new() failed: {}", e))
+                .unwrap()
+                .into_raw()
+        }
     };
     let decryptor = match age::Decryptor::new(ArmoredReader::new(input_file)) {
         Ok(d) => d,
-        Err(e) => return CString::new(format!("Decryptor::new() failed: {}", e)).unwrap().into_raw(),
+        Err(e) => {
+            return CString::new(format!("Decryptor::new() failed: {}", e))
+                .unwrap()
+                .into_raw()
+        }
     };
     match decryptor {
         age::Decryptor::Passphrase(_) => return CString::new("passphrase").unwrap().into_raw(),
@@ -151,15 +160,18 @@ pub unsafe extern "C" fn generate_identity(output_path: *const c_char) -> *const
 }
 
 unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
-
     let input = if !(*c_opts).input.is_null() {
-        CStr::from_ptr((*c_opts).input).to_string_lossy().into_owned()
+        CStr::from_ptr((*c_opts).input)
+            .to_string_lossy()
+            .into_owned()
     } else {
         "".to_string()
     };
 
     let passphrase = if !(*c_opts).passphrase.is_null() {
-        let p = CStr::from_ptr((*c_opts).passphrase).to_string_lossy().into_owned();
+        let p = CStr::from_ptr((*c_opts).passphrase)
+            .to_string_lossy()
+            .into_owned();
         Some(p)
     } else {
         None
@@ -173,22 +185,30 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
     // for recipient, recipients_file, identity, if null, put empty vec in rust options. if not, make vec with len 1.
     let (mut recipient, mut recipients_file, mut identity) = (vec![], vec![], vec![]);
     if !(*c_opts).recipient.is_null() {
-        recipient = vec![CStr::from_ptr((*c_opts).recipient).to_string_lossy().into_owned()];
+        recipient = vec![CStr::from_ptr((*c_opts).recipient)
+            .to_string_lossy()
+            .into_owned()];
     }
     if !(*c_opts).recipients_file.is_null() {
-        recipients_file = vec![CStr::from_ptr((*c_opts).recipients_file).to_string_lossy().into_owned()];
+        recipients_file = vec![CStr::from_ptr((*c_opts).recipients_file)
+            .to_string_lossy()
+            .into_owned()];
     }
     if !(*c_opts).identity.is_null() {
-        identity = vec![CStr::from_ptr((*c_opts).identity).to_string_lossy().into_owned()];
+        identity = vec![CStr::from_ptr((*c_opts).identity)
+            .to_string_lossy()
+            .into_owned()];
     }
 
     let output = if !(*c_opts).output.is_null() {
-        CStr::from_ptr((*c_opts).output).to_string_lossy().into_owned()
+        CStr::from_ptr((*c_opts).output)
+            .to_string_lossy()
+            .into_owned()
     } else {
         "".to_string()
     };
 
-    AgeOptions{
+    AgeOptions {
         input: input,
         encrypt: (*c_opts).encrypt != 0,
         using_passphrase: (*c_opts).using_passphrase != 0,
@@ -203,8 +223,8 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
 }
 
 fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
-    // if using passphrase but passphrase but not provided, generate. 
-    // TODO: return to c++? return int for "yes, receive generated password" then 
+    // if using passphrase but passphrase but not provided, generate.
+    // TODO: return to c++? return int for "yes, receive generated password" then
     // c++ calls another function to read that value and launches pop-up
     let encryptor = if opts.using_passphrase {
         let passphrase = match &opts.passphrase {
@@ -221,7 +241,6 @@ fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
         )?)
     };
 
-
     // then io::copy, output, and armor
     let mut input = file_io::InputReader::new(Some(opts.input.clone()))?;
 
@@ -236,9 +255,7 @@ fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
     let mut output = encryptor.wrap_output(ArmoredWriter::wrap_output(output, format)?)?;
 
     io::copy(&mut input, &mut output)?;
-    output
-        .finish()
-        .and_then(|armor| armor.finish())?;
+    output.finish().and_then(|armor| armor.finish())?;
 
     Ok(())
 }
@@ -251,7 +268,7 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
         age::Decryptor::Passphrase(decryptor) => {
             // TODO: how do we ensure that a passphrase was sent with AgeOptions?
             let p = if opts.passphrase.is_none() {
-                return Err(error::DecryptError::MissingIdentities) // TODO: make proper error here
+                return Err(error::DecryptError::MissingIdentities); // TODO: make proper error here
             } else {
                 SecretString::new(opts.passphrase.clone().unwrap())
             };
@@ -259,7 +276,7 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
                 .decrypt(&p, opts.max_work_factor)
                 .map_err(|e| e.into())
                 .and_then(|input| write_output(input, Some(output)))
-        },
+        }
         age::Decryptor::Recipients(decryptor) => {
             let identities = read_identities(
                 opts.identity.clone(),
@@ -276,7 +293,7 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
                 .decrypt(identities.iter().map(|i| i.as_ref() as &dyn Identity))
                 .map_err(|e| e.into())
                 .and_then(|input| write_output(input, Some(output)))
-        },
+        }
     }
 }
 
