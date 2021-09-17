@@ -80,7 +80,6 @@ BEGIN_MESSAGE_MAP(CAgeDlg, CDialogEx)
 	ON_BN_CLICKED(RADIO_PASSPHRASE, &CAgeDlg::OnBnClickedPassphrase)
 	ON_BN_CLICKED(RADIO_IDENTITY_RECIPIENT, &CAgeDlg::OnBnClickedIdentityRecipient)
 	ON_BN_CLICKED(ENCRYPT_LABEL, &CAgeDlg::OnBnClickedLabel)
-	ON_EN_CHANGE(IDENTITY_FILE_SELECTOR, &CAgeDlg::OnEnChangeFileSelector)
 	ON_BN_CLICKED(IDC_ARMOR, &CAgeDlg::OnBnClickedArmor)
 END_MESSAGE_MAP()
 
@@ -121,11 +120,13 @@ BOOL CAgeDlg::OnInitDialog()
 	if (__argc > 2) {
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowTextA(__argv[2]);
 	}
+	// when decrypting, show identity, hide recipient, hide passphrase
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
 		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowTextA("Select file to decrypt");
 		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowTextA("Decrypt");
 		this->GetDlgItem(IDC_ARMOR)->ShowWindow(false);
-		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->EnableWindow(false);
+		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowTextA("Select identity file");
+		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowTextA("Identity");
 
 		if (__argc > 2) { // second arg should be filename
 			if (!PathFileExists(__argv[2])) {
@@ -241,7 +242,6 @@ HCURSOR CAgeDlg::OnQueryDragIcon()
 void CAgeDlg::OnBnClickedButton()
 {
 	LPTSTR recipient = NULL;
-	LPTSTR identityFile = NULL;
 	LPTSTR inputFile = NULL;
 	LPTSTR passphrase = NULL;
 	CString output;
@@ -297,12 +297,7 @@ void CAgeDlg::OnBnClickedButton()
 		MALLOC_CHECK(recipient);
 		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextA(recipient, pathSize);
 
-		pathSize = this->GetDlgItem(IDENTITY_FILE_SELECTOR)->GetWindowTextLengthA() + 1;
-		identityFile = (LPTSTR)malloc(pathSize);
-		MALLOC_CHECK(identityFile);
-		this->GetDlgItem(IDENTITY_FILE_SELECTOR)->GetWindowTextA(identityFile, pathSize);
-
-		if (!strcmp(recipient, "") && !strcmp(identityFile, "")) {
+		if (!strcmp(recipient, "")) {
 			MessageBox("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities.", "Missing Identity/Recipent", MB_OK | MB_ICONERROR);
 			goto cleanup;
 		}
@@ -374,7 +369,6 @@ void CAgeDlg::OnBnClickedButton()
 	cOptions->passphrase = passphrase;
 	cOptions->max_work_factor = 0; // 22; // TODO
 	cOptions->armor = armor;
-	cOptions->identity = identityFile;
 	cOptions->output = output.GetBuffer();
 
 	if (recipient != NULL && strcmp(recipient, "")) {
@@ -396,7 +390,6 @@ cleanup:
 	free(inputFile);
 	free(outputName);
 	free(recipient);
-	free(identityFile);
 	free(passphrase);
 	free(cOptions);
 }
@@ -419,8 +412,6 @@ void CAgeDlg::OnBnClickedPassphrase()
 	this->GetDlgItem(PASSPHRASE_LABEL)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(RECIPIENT_LABEL)->ShowWindow(SW_HIDE);
 	this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->ShowWindow(SW_HIDE);
-	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->ShowWindow(false);
-	this->GetDlgItem(IDENTITY_FILE_LABEL)->ShowWindow(false);
 }
 
 
@@ -430,8 +421,6 @@ void CAgeDlg::OnBnClickedIdentityRecipient()
 	this->GetDlgItem(PASSPHRASE_LABEL)->ShowWindow(SW_HIDE);
 	this->GetDlgItem(RECIPIENT_LABEL)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->ShowWindow(SW_SHOW);
-	this->GetDlgItem(IDENTITY_FILE_SELECTOR)->ShowWindow(true);
-	this->GetDlgItem(IDENTITY_FILE_LABEL)->ShowWindow(true);
 }
 
 

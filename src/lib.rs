@@ -50,8 +50,7 @@ pub struct COptions {
     max_work_factor: c_uchar,
     armor: c_int, // bool: 0 == no armor, 1 == armor
     recipient: *const c_char,
-    recipients_file: *const c_char,
-    identity: *const c_char,
+    recipient_or_identity_file: *const c_char,
     output: *const c_char,
 }
 
@@ -64,8 +63,7 @@ struct AgeOptions {
     max_work_factor: Option<u8>,
     armor: bool,
     recipient: Vec<String>,
-    recipients_file: Vec<String>,
-    identity: Vec<String>,
+    recipient_or_identity_file: Vec<String>,
     output: String,
 }
 
@@ -183,22 +181,22 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
     };
 
     // for recipient, recipients_file, identity, if null, put empty vec in rust options. if not, make vec with len 1.
-    let (mut recipient, mut recipients_file, mut identity) = (vec![], vec![], vec![]);
+    let (mut recipient, mut recipient_or_identity_file) = (vec![], vec![]);
     if !(*c_opts).recipient.is_null() {
         recipient = vec![CStr::from_ptr((*c_opts).recipient)
             .to_string_lossy()
             .into_owned()];
     }
-    if !(*c_opts).recipients_file.is_null() {
-        recipients_file = vec![CStr::from_ptr((*c_opts).recipients_file)
+    if !(*c_opts).recipient_or_identity_file.is_null() {
+        recipient_or_identity_file = vec![CStr::from_ptr((*c_opts).recipient_or_identity_file)
             .to_string_lossy()
             .into_owned()];
     }
-    if !(*c_opts).identity.is_null() {
-        identity = vec![CStr::from_ptr((*c_opts).identity)
-            .to_string_lossy()
-            .into_owned()];
-    }
+    // if !(*c_opts).identity.is_null() {
+    //     identity = vec![CStr::from_ptr((*c_opts).identity)
+    //         .to_string_lossy()
+    //         .into_owned()];
+    // }
 
     let output = if !(*c_opts).output.is_null() {
         CStr::from_ptr((*c_opts).output)
@@ -216,16 +214,13 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
         max_work_factor: max_work_factor,
         armor: (*c_opts).armor != 0,
         recipient: recipient,
-        recipients_file: recipients_file,
-        identity: identity,
+        recipient_or_identity_file: recipient_or_identity_file,
+        // identity: identity,
         output: output,
     }
 }
 
 fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
-    // if using passphrase but passphrase but not provided, generate.
-    // TODO: return to c++? return int for "yes, receive generated password" then
-    // c++ calls another function to read that value and launches pop-up
     let encryptor = if opts.using_passphrase {
         let passphrase = match &opts.passphrase {
             Some(p) => SecretString::new(p.to_string()),
@@ -236,8 +231,7 @@ fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
         // if not using passphrase, use recipients/identity
         age::Encryptor::with_recipients(read_recipients(
             opts.recipient.clone(),
-            opts.recipients_file.clone(),
-            opts.identity.clone(),
+            opts.recipient_or_identity_file.clone(),
         )?)
     };
 
@@ -279,7 +273,7 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
         }
         age::Decryptor::Recipients(decryptor) => {
             let identities = read_identities(
-                opts.identity.clone(),
+                opts.recipient_or_identity_file.clone(),
                 error::DecryptError::IdentityNotFound,
                 #[cfg(feature = "ssh")]
                 error::DecryptError::UnsupportedKey,
@@ -311,8 +305,7 @@ fn write_output<R: io::Read>(
 /// Reads recipients from the provided arguments.
 fn read_recipients(
     recipient_strings: Vec<String>,
-    recipients_file_strings: Vec<String>,
-    identity_strings: Vec<String>,
+    file_strings: Vec<String>,
 ) -> Result<Vec<Box<dyn Recipient>>, error::EncryptError> {
     let mut recipients: Vec<Box<dyn Recipient>> = vec![];
     let mut plugin_recipients: Vec<plugin::Recipient> = vec![];
@@ -322,39 +315,43 @@ fn read_recipients(
         parse_recipient(arg, &mut recipients, &mut plugin_recipients)?;
     }
 
-    for arg in recipients_file_strings {
+    for arg in file_strings {
         let f = File::open(&arg)?;
         let buf = BufReader::new(f);
-        read_recipients_list(&arg, buf, &mut recipients, &mut plugin_recipients)?;
-    }
+        match read_recipients_list(&arg, buf, &mut recipients, &mut plugin_recipients) {
+            Ok(()) => {
 
-    for filename in identity_strings {
-        // Try parsing as a single multi-line SSH identity.
-        #[cfg(feature = "ssh")]
-        match age::ssh::Identity::from_buffer(
-            BufReader::new(File::open(&filename)?),
-            Some(filename.clone()),
-        ) {
-            Ok(age::ssh::Identity::Unsupported(k)) => {
-                return Err(error::EncryptError::UnsupportedKey(filename, k))
-            }
-            Ok(identity) => {
-                if let Ok(recipient) = age::ssh::Recipient::try_from(identity) {
-                    recipients.push(Box::new(recipient));
-                    continue;
+            },
+            Err(e) => { // if we failed to parse as recipients list, try to parse as identity file
+                // Try parsing as a single multi-line SSH identity.
+                #[cfg(feature = "ssh")]
+                match age::ssh::Identity::from_buffer(
+                    BufReader::new(File::open(&arg)?),
+                    Some(arg.clone()),
+                ) {
+                    Ok(age::ssh::Identity::Unsupported(k)) => {
+                        return Err(error::EncryptError::UnsupportedKey(arg, k))
+                    }
+                    Ok(identity) => {
+                        if let Ok(recipient) = age::ssh::Recipient::try_from(identity) {
+                            recipients.push(Box::new(recipient));
+                            continue;
+                        }
+                    }
+                    Err(_) => (),
                 }
-            }
-            Err(_) => (),
-        }
 
-        // Try parsing as multiple single-line age identities.
-        let identity_file = IdentityFile::from_file(filename.clone())?;
-        let (new_ids, new_plugin_ids) = identity_file.split_into();
-        for identity in new_ids {
-            recipients.push(Box::new(identity.to_public()));
+                // Try parsing as multiple single-line age identities.
+                let identity_file = IdentityFile::from_file(arg.clone())?;
+                let (new_ids, new_plugin_ids) = identity_file.split_into();
+                for identity in new_ids {
+                    recipients.push(Box::new(identity.to_public()));
+                }
+                plugin_identities.extend(new_plugin_ids);
+            },
         }
-        plugin_identities.extend(new_plugin_ids);
     }
+
 
     // Collect the names of the required plugins.
     let mut plugin_names = plugin_recipients

@@ -53,7 +53,6 @@ struct COptions {
 	BOOL armor;
 	const char* recipient;
 	const char* recipients_file;
-	const char* identity;
 	const char* output;
 };
 
