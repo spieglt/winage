@@ -124,6 +124,8 @@ BOOL CAgeDlg::OnInitDialog()
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
 		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowTextA("Select file to decrypt");
 		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowTextA("Decrypt");
+		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowTextA("Enter passphrase");
+		this->GetDlgItem(INPUT_FILE_SELECTOR)->EnableWindow(false);
 		this->GetDlgItem(IDC_ARMOR)->ShowWindow(false);
 		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowTextA("Select identity file");
 		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowTextA("Identity");
