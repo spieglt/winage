@@ -316,6 +316,7 @@ void CAgeDlg::OnBnClickedButton()
 			gpd.DoModal();
 		}
 		else {
+			// confirm password, pop up 
 			passphrase = (LPTSTR)malloc(pathSize);
 			MALLOC_CHECK(passphrase);
 			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextA(passphrase, pathSize);
