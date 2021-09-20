@@ -1,4 +1,4 @@
-This is a Windows GUI for the file encryption tool [age](https://github.com/FiloSottile/age https://github.com/FiloSottile/age), built on top of [rage](https://github.com/str4d/rage). This adapter wraps the `age` crate, compiles as a static C library, and is used by an MFC GUI.
+This is a Windows GUI for the file encryption tool [age](https://github.com/FiloSottile/age), built on top of [rage](https://github.com/str4d/rage). This adapter wraps the `age` crate, compiles as a static C library, and is used by an MFC GUI.
 
 The format specification is at age-encryption.org/v1. To discuss the spec or other age related topics, please email the mailing list at age-dev@googlegroups.com. age was designed by @Benjojo12 and @FiloSottile.
 
