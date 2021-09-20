@@ -260,7 +260,6 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
     let output = opts.output.clone();
     match decryptor {
         age::Decryptor::Passphrase(decryptor) => {
-            // TODO: how do we ensure that a passphrase was sent with AgeOptions?
             let p = if opts.passphrase.is_none() {
                 return Err(error::DecryptError::MissingIdentities); // TODO: make proper error here
             } else {

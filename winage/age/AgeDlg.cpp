@@ -115,7 +115,7 @@ BOOL CAgeDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	// TODO: Add extra initialization here
+	// Add extra initialization here
 	this->CheckDlgButton(RADIO_PASSPHRASE, BST_CHECKED);
 	if (__argc > 2) {
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowTextA(__argv[2]);
@@ -370,7 +370,7 @@ void CAgeDlg::OnBnClickedButton()
 	cOptions->encrypt = encrypting;
 	cOptions->using_passphrase = usingPassphrase;
 	cOptions->passphrase = passphrase;
-	cOptions->max_work_factor = 0; // 22; // TODO
+	cOptions->max_work_factor = 0;
 	cOptions->armor = armor;
 	cOptions->output = output.GetBuffer();
 
@@ -400,12 +400,12 @@ cleanup:
 
 void CAgeDlg::OnEnChangeBox()
 {
-	// TODO:  If this is a RICHEDIT control, the control will not
+	// If this is a RICHEDIT control, the control will not
 	// send this notification unless you override the CDialogEx::OnInitDialog()
 	// function and call CRichEditCtrl().SetEventMask()
 	// with the ENM_CHANGE flag ORed into the mask.
 
-	// TODO:  Add your control notification handler code here
+	// Add your control notification handler code here
 }
 
 
@@ -429,21 +429,20 @@ void CAgeDlg::OnBnClickedIdentityRecipient()
 
 void CAgeDlg::OnBnClickedLabel()
 {
-	// TODO: Add your control notification handler code here
 }
 
 
 void CAgeDlg::OnEnChangeFileSelector()
 {
-	// TODO:  If this is a RICHEDIT control, the control will not
+	// If this is a RICHEDIT control, the control will not
 	// send this notification unless you override the CDialogEx::OnInitDialog()
 	// function and call CRichEditCtrl().SetEventMask()
 	// with the ENM_CHANGE flag ORed into the mask.
 
-	// TODO:  Add your control notification handler code here
+	// Add your control notification handler code here
 }
 
 void CAgeDlg::OnBnClickedArmor()
 {
-	// TODO: Add your control notification handler code here
+	// Add your control notification handler code here
 }

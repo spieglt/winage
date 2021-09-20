@@ -25,7 +25,7 @@ CAgeApp::CAgeApp()
 	// support Restart Manager
 	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
 
-	// TODO: add construction code here,
+	// add construction code here,
 	// Place all significant initialization in InitInstance
 }
 
@@ -64,21 +64,21 @@ BOOL CAgeApp::InitInstance()
 	// of your final executable, you should remove from the following
 	// the specific initialization routines you do not need
 	// Change the registry key under which our settings are stored
-	// TODO: You should modify this string to be something appropriate
+	// You should modify this string to be something appropriate
 	// such as the name of your company or organization
-	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+	SetRegistryKey(_T("age file encryption"));
 
 	CAgeDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
-		// TODO: Place code here to handle when the dialog is
+		// Place code here to handle when the dialog is
 		//  dismissed with OK
 	}
 	else if (nResponse == IDCANCEL)
 	{
-		// TODO: Place code here to handle when the dialog is
+		// Place code here to handle when the dialog is
 		//  dismissed with Cancel
 	}
 	else if (nResponse == -1)

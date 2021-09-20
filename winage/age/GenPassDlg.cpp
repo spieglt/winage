@@ -37,12 +37,12 @@ END_MESSAGE_MAP()
 
 void GenPassDlg::OnEnChangePasswordBox()
 {
-	// TODO:  If this is a RICHEDIT control, the control will not
+	// If this is a RICHEDIT control, the control will not
 	// send this notification unless you override the CDialogEx::OnInitDialog()
 	// function and call CRichEditCtrl().SetEventMask()
 	// with the ENM_CHANGE flag ORed into the mask.
 
-	// TODO:  Add your control notification handler code here
+	// Add your control notification handler code here
 }
 
 
@@ -50,7 +50,7 @@ BOOL GenPassDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// TODO:  Add extra initialization here
+	// Add extra initialization here
 	this->GetDlgItem(GENERATED_PASSWORD_BOX)->SetWindowTextA(this->msg);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
