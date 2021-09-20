@@ -15,12 +15,6 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_00FC3E0728194030BE57753EBA3BB18E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_5A11402233FC4A58B989C92F008074D6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -112,26 +106,6 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_00FC3E0728194030BE57753EBA3BB18E"
-            {
-            "SourcePath" = "8:..\\age\\res\\age.ico"
-            "TargetName" = "8:age.ico"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
         }
         "FileType"
         {
@@ -141,7 +115,7 @@
             "Description" = "8:"
             "Extensions" = "8:.age"
             "MIME" = "8:"
-            "Icon" = "8:_00FC3E0728194030BE57753EBA3BB18E"
+            "Icon" = "8:_6486347875364AF5AACFB2798388ED24"
             "IconIndex" = "3:0"
                 "Command"
                 {
@@ -212,7 +186,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:age"
         "ProductCode" = "8:{767DB81C-B10C-4469-9320-F53AC1A7CA24}"
-        "PackageCode" = "8:{1AB29BCE-8846-4B9E-8162-220930F4989C}"
+        "PackageCode" = "8:{8CD9D9A9-BDC9-4AB8-B348-8242F96EFB68}"
         "UpgradeCode" = "8:{34C9C835-96D7-4DA4-A29D-93188E4281B6}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -485,7 +459,7 @@
             "Target" = "8:_5A11402233FC4A58B989C92F008074D6"
             "Folder" = "8:_334C59982FED466D995230BB33B98DC2"
             "WorkingFolder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Icon" = "8:_00FC3E0728194030BE57753EBA3BB18E"
+            "Icon" = "8:"
             "Feature" = "8:"
             }
         }
