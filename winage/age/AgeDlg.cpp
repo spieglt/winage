@@ -132,7 +132,7 @@ BOOL CAgeDlg::OnInitDialog()
 
 		if (__argc > 2) { // second arg should be filename
 			if (!PathFileExists(__argv[2])) {
-				MessageBox("Not a valid Age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
+				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
 				exit(1);
 			}
 			// detect and handle authentication mode
@@ -150,7 +150,7 @@ BOOL CAgeDlg::OnInitDialog()
 				this->OnBnClickedPassphrase();
 			}
 			else { // error
-				MessageBox("Not a valid Age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
+				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
 				exit(1);
 			}
 			free_rust_string(mode);
@@ -346,7 +346,7 @@ void CAgeDlg::OnBnClickedButton()
 			"age",
 			outputName,
 			OFN_OVERWRITEPROMPT,
-			"Age files|*.age||",
+			"age files|*.age||",
 			NULL,
 			0,
 			TRUE

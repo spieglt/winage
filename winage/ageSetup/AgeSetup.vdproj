@@ -3,7 +3,7 @@
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
-"ProjectName" = "8:AgeSetup"
+"ProjectName" = "8:ageSetup"
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
@@ -15,44 +15,14 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_0032C2DFEAD75DAD45C81277A9168A3A"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2DA3CF01AC0EDFD02DE8488CDDF1F7A6"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4F5E97A8E359279DBA173249477313E8"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
+        "MsmKey" = "8:_00FC3E0728194030BE57753EBA3BB18E"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_5A11402233FC4A58B989C92F008074D6"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5AEA912D8D815AD004F77BC574944DC1"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_732AB589748882DD896F5A99A01B9776"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_BD4E4A85C14204707A254F94E631BB19"
-        "OwnerKey" = "8:_5A11402233FC4A58B989C92F008074D6"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -142,10 +112,10 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0032C2DFEAD75DAD45C81277A9168A3A"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_00FC3E0728194030BE57753EBA3BB18E"
             {
-            "SourcePath" = "8:OLEACC.dll"
-            "TargetName" = "8:OLEACC.dll"
+            "SourcePath" = "8:..\\age\\res\\age.ico"
+            "TargetName" = "8:age.ico"
             "Tag" = "8:"
             "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
             "Condition" = "8:"
@@ -158,108 +128,8 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2DA3CF01AC0EDFD02DE8488CDDF1F7A6"
-            {
-            "SourcePath" = "8:UxTheme.dll"
-            "TargetName" = "8:UxTheme.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F5E97A8E359279DBA173249477313E8"
-            {
-            "SourcePath" = "8:MSIMG32.dll"
-            "TargetName" = "8:MSIMG32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5AEA912D8D815AD004F77BC574944DC1"
-            {
-            "SourcePath" = "8:gdiplus.dll"
-            "TargetName" = "8:gdiplus.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_732AB589748882DD896F5A99A01B9776"
-            {
-            "SourcePath" = "8:bcrypt.dll"
-            "TargetName" = "8:bcrypt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BD4E4A85C14204707A254F94E631BB19"
-            {
-            "SourcePath" = "8:IMM32.dll"
-            "TargetName" = "8:IMM32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
         }
@@ -267,11 +137,11 @@
         {
             "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_1958D1B59AA54F5F8215D34CBFE96624"
             {
-            "Name" = "8:Age"
+            "Name" = "8:age"
             "Description" = "8:"
             "Extensions" = "8:.age"
             "MIME" = "8:"
-            "Icon" = "8:"
+            "Icon" = "8:_00FC3E0728194030BE57753EBA3BB18E"
             "IconIndex" = "3:0"
                 "Command"
                 {
@@ -340,9 +210,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:Age"
+        "ProductName" = "8:age"
         "ProductCode" = "8:{767DB81C-B10C-4469-9320-F53AC1A7CA24}"
-        "PackageCode" = "8:{17FCFC94-6278-4320-95F8-6EF0F344E8BE}"
+        "PackageCode" = "8:{1AB29BCE-8846-4B9E-8162-220930F4989C}"
         "UpgradeCode" = "8:{34C9C835-96D7-4DA4-A29D-93188E4281B6}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -350,10 +220,10 @@
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
         "ProductVersion" = "8:1.0.0"
-        "Manufacturer" = "8:Age"
+        "Manufacturer" = "8:age"
         "ARPHELPTELEPHONE" = "8:"
-        "ARPHELPLINK" = "8:"
-        "Title" = "8:Age GUI Setup"
+        "ARPHELPLINK" = "8:https://github.com/spieglt/winage"
+        "Title" = "8:age GUI setup"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Filippo Valsorda"
         "Keywords" = "8:"
@@ -462,7 +332,7 @@
                                 {
                                     "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_44B144639FF34C769B27E7E99D82D1E9"
                                     {
-                                    "Name" = "8:Encrypt with Age"
+                                    "Name" = "8:Encrypt with age"
                                     "Condition" = "8:"
                                     "AlwaysCreate" = "11:FALSE"
                                     "DeleteAtUninstall" = "11:FALSE"
@@ -487,7 +357,7 @@
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
-                                                    "Value" = "8:[TARGETDIR]Age.exe encrypt \"%1\""
+                                                    "Value" = "8:[TARGETDIR]age.exe encrypt \"%1\""
                                                     }
                                                 }
                                             }
@@ -560,7 +430,7 @@
                                                             "Condition" = "8:"
                                                             "Transitive" = "11:FALSE"
                                                             "ValueTypes" = "3:1"
-                                                            "Value" = "8:[TARGETDIR]Age.exe generate"
+                                                            "Value" = "8:[TARGETDIR]age.exe generate"
                                                             }
                                                         }
                                                     }
@@ -606,7 +476,7 @@
         {
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_494D76B317584709A55FDD4BFB810FDC"
             {
-            "Name" = "8:Age"
+            "Name" = "8:age file encryption"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
@@ -615,7 +485,7 @@
             "Target" = "8:_5A11402233FC4A58B989C92F008074D6"
             "Folder" = "8:_334C59982FED466D995230BB33B98DC2"
             "WorkingFolder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
-            "Icon" = "8:"
+            "Icon" = "8:_00FC3E0728194030BE57753EBA3BB18E"
             "Feature" = "8:"
             }
         }
@@ -1019,7 +889,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5A11402233FC4A58B989C92F008074D6"
             {
-            "SourcePath" = "8:..\\x64\\Release\\Age.exe"
+            "SourcePath" = "8:..\\x64\\Release\\age.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_8114F3DBDD8D42A0B830B7F91A215ABB"
