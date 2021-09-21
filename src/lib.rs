@@ -6,13 +6,10 @@ use age::{
     cli_common::{file_io, read_identities, UiCallbacks},
     plugin, Identity, IdentityFile, Recipient,
 };
-use i18n_embed::fluent::{fluent_language_loader, FluentLanguageLoader};
-use lazy_static::lazy_static;
 use rand::{
     distributions::{Distribution, Uniform},
     rngs::OsRng,
 };
-use rust_embed::RustEmbed;
 use secrecy::SecretString;
 
 use std::ffi::{CStr, CString};
@@ -22,23 +19,6 @@ use std::os::raw::{c_char, c_int, c_uchar};
 use std::ptr::null_mut;
 
 const BIP39_WORDLIST: &str = include_str!("..\\assets\\bip39-english.txt");
-
-#[derive(RustEmbed)]
-#[folder = "i18n"]
-struct Translations;
-
-const TRANSLATIONS: Translations = Translations {};
-
-lazy_static! {
-    static ref LANGUAGE_LOADER: FluentLanguageLoader = fluent_language_loader!();
-}
-
-#[macro_export]
-macro_rules! fl {
-    ($message_id:literal) => {{
-        i18n_embed_fl::fl!($crate::LANGUAGE_LOADER, $message_id)
-    }};
-}
 
 #[repr(C)]
 #[derive(Debug)]
@@ -224,7 +204,7 @@ fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
     let encryptor = if opts.using_passphrase {
         let passphrase = match &opts.passphrase {
             Some(p) => SecretString::new(p.to_string()),
-            None => return Err(error::EncryptError::PassphraseTimedOut), // TODO: make a proper error for this. we should have received generated password from c++ already if we're using passphrase.
+            None => return Err(error::EncryptError::PassphraseMissing),
         };
         age::Encryptor::with_user_passphrase(passphrase)
     } else {
@@ -318,10 +298,8 @@ fn read_recipients(
         let f = File::open(&arg)?;
         let buf = BufReader::new(f);
         match read_recipients_list(&arg, buf, &mut recipients, &mut plugin_recipients) {
-            Ok(()) => {
-
-            },
-            Err(e) => { // if we failed to parse as recipients list, try to parse as identity file
+            Ok(()) => (),
+            Err(_e) => { // if we failed to parse as recipients list, try to parse as identity file
                 // Try parsing as a single multi-line SSH identity.
                 #[cfg(feature = "ssh")]
                 match age::ssh::Identity::from_buffer(
