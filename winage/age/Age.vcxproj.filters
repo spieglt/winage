@@ -33,6 +33,9 @@
     <ClInclude Include="GenPassDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConfirmPassDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Age.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GenPassDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfirmPassDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

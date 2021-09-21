@@ -7,6 +7,7 @@
 #include "AgeDlg.h"
 #include "afxdialogex.h"
 #include "winuser.h"
+#include "ConfirmPassDlg.h"
 #include "GenPassDlg.h"
 
 #ifdef _DEBUG
@@ -319,10 +320,18 @@ void CAgeDlg::OnBnClickedButton()
 			gpd.DoModal();
 		}
 		else {
-			// confirm password, pop up 
 			passphrase = (LPTSTR)malloc(pathSize);
 			MALLOC_CHECK(passphrase);
 			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextA(passphrase, pathSize);
+			// confirm password
+			ConfirmPassDlg confirmDlg = new ConfirmPassDlg;
+			if (confirmDlg.DoModal() != IDOK) {
+				goto cleanup;
+			}
+			else if (strcmp(passphrase, confirmDlg.confirmedPassphrase.GetBuffer())) {
+				MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
+				goto cleanup;
+			}
 		}
 
 		if (!encrypting && !strcmp(passphrase, "")) {

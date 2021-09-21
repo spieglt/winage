@@ -193,6 +193,7 @@
   <ItemGroup>
     <ClInclude Include="Age.h" />
     <ClInclude Include="AgeDlg.h" />
+    <ClInclude Include="ConfirmPassDlg.h" />
     <ClInclude Include="GenPassDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -201,6 +202,7 @@
   <ItemGroup>
     <ClCompile Include="Age.cpp" />
     <ClCompile Include="AgeDlg.cpp" />
+    <ClCompile Include="ConfirmPassDlg.cpp" />
     <ClCompile Include="GenPassDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

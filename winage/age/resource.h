@@ -8,6 +8,8 @@
 #define IDD_AGE_DIALOG                  102
 #define IDR_MAINFRAME                   128
 #define IDD_GEN_PW_DIALOG               133
+#define IDD_GEN_PASS_DIALOG             133
+#define IDD_CONFIRM_PASS_DIALOG         135
 #define ENCRYPT_BUTTON                  1002
 #define PASSPHRASE_BOX                  1003
 #define RADIO_IDENTITY_RECIPIENT        1004
@@ -25,14 +27,15 @@
 #define IDENTITY_FILE_LABEL             1016
 #define IDENTITY_FILE_SELECTOR          1017
 #define IDC_ARMOR                       1019
+#define IDC_PASS_CONFIRMATION           1022
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        135
+#define _APS_NEXT_RESOURCE_VALUE        137
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1022
+#define _APS_NEXT_CONTROL_VALUE         1023
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
