@@ -27,7 +27,7 @@ const BIP39_WORDLIST: &str = include_str!("..\\assets\\bip39-english.txt");
 #[folder = "i18n"]
 struct Translations;
 
-// const TRANSLATIONS: Translations = Translations {};
+const TRANSLATIONS: Translations = Translations {};
 
 lazy_static! {
     static ref LANGUAGE_LOADER: FluentLanguageLoader = fluent_language_loader!();

@@ -92,7 +92,7 @@ rec-enc-broken-stdout = Are you piping to a program that isn't reading from stdi
 
 err-enc-broken-file = Could not write to file: {$err}
 
-err-enc-invalid-recipient = Invalid recipient '{$recipient}'
+err-enc-invalid-recipient = Invalid recipient {$recipient}
 
 err-enc-missing-recipients = Missing recipients.
 rec-enc-missing-recipients = Did you forget to specify {-flag-recipient}?

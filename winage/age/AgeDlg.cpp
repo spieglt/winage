@@ -17,11 +17,9 @@
 #define MALLOC_CHECK(ptr) { \
 	if (ptr == NULL) { \
 		MessageBox("Memory allocation error, aborting.", "Error", MB_OK | MB_ICONERROR); \
-		return; \
+		goto cleanup; \
 	} \
 }
-
-
 
 // CAboutDlg dialog used for App About
 
@@ -300,7 +298,12 @@ void CAgeDlg::OnBnClickedButton()
 		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextA(recipient, pathSize);
 
 		if (!strcmp(recipient, "")) {
-			MessageBox("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities.", "Missing Identity/Recipent", MB_OK | MB_ICONERROR);
+			if (encrypting) {
+				MessageBox("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities.", "Missing Identity/Recipent", MB_OK | MB_ICONERROR);
+			}
+			else {
+				MessageBox("Must select a file containing one or more identities.", "Missing Identity", MB_OK | MB_ICONERROR);
+			}
 			goto cleanup;
 		}
 	}
