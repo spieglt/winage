@@ -172,11 +172,6 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
             .to_string_lossy()
             .into_owned()];
     }
-    // if !(*c_opts).identity.is_null() {
-    //     identity = vec![CStr::from_ptr((*c_opts).identity)
-    //         .to_string_lossy()
-    //         .into_owned()];
-    // }
 
     let output = if !(*c_opts).output.is_null() {
         CStr::from_ptr((*c_opts).output)
@@ -195,7 +190,6 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
         armor: (*c_opts).armor != 0,
         recipient: recipient,
         recipient_or_identity_file: recipient_or_identity_file,
-        // identity: identity,
         output: output,
     }
 }

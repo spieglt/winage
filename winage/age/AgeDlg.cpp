@@ -119,7 +119,6 @@ BOOL CAgeDlg::OnInitDialog()
 	if (__argc > 2) {
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowText(__argv[2]);
 	}
-	// when decrypting, show identity, hide recipient, hide passphrase
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
 		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowText("Select file to decrypt");
 		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowText("Decrypt");
