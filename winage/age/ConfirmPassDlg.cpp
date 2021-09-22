@@ -39,6 +39,5 @@ END_MESSAGE_MAP()
 
 void ConfirmPassDlg::OnBnClickedOk()
 {
-	//this->GetDlgItem(IDC_PASS_CONFIRMATION)->GetWindowText(this->confirmedPassphrase);
 	CDialogEx::OnOK();
 }

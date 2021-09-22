@@ -51,7 +51,7 @@ BOOL GenPassDlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	// Add extra initialization here
-	this->GetDlgItem(GENERATED_PASSWORD_BOX)->SetWindowTextA(this->msg);
+	this->GetDlgItem(GENERATED_PASSWORD_BOX)->SetWindowText(this->msg);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE

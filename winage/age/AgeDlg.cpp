@@ -117,17 +117,17 @@ BOOL CAgeDlg::OnInitDialog()
 	// Add extra initialization here
 	this->CheckDlgButton(RADIO_PASSPHRASE, BST_CHECKED);
 	if (__argc > 2) {
-		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowTextA(__argv[2]);
+		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowText(__argv[2]);
 	}
 	// when decrypting, show identity, hide recipient, hide passphrase
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
-		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowTextA("Select file to decrypt");
-		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowTextA("Decrypt");
-		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowTextA("Enter passphrase");
+		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowText("Select file to decrypt");
+		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowText("Decrypt");
+		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowText("Enter passphrase");
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->EnableWindow(false);
 		this->GetDlgItem(IDC_ARMOR)->ShowWindow(false);
-		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowTextA("Select identity file");
-		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowTextA("Identity");
+		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowText("Select identity file");
+		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowText("Identity");
 
 		if (__argc > 2) { // second arg should be filename
 			if (!PathFileExists(__argv[2])) {
@@ -255,11 +255,11 @@ void CAgeDlg::OnBnClickedButton()
 	BOOL armor = this->IsDlgButtonChecked(IDC_ARMOR);
 
 	// get and verify input filepath
-	int pathSize = this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowTextLengthA() + 1;
+	int pathSize = this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowTextLength() + 1;
 	size_t bigSize = pathSize;
 	inputFile = (LPTSTR)malloc(pathSize);
 	MALLOC_CHECK(inputFile);
-	this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowTextA(inputFile, pathSize);
+	this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowText(inputFile, pathSize);
 	if (!strcmp(inputFile, "")) {
 		MessageBox("Must select file to encrypt or decrypt.", "No Input File Selected", MB_OK | MB_ICONERROR);
 		goto cleanup;
@@ -293,10 +293,10 @@ void CAgeDlg::OnBnClickedButton()
 
 	// handle auth mode
 	if (this->IsDlgButtonChecked(RADIO_IDENTITY_RECIPIENT)) {
-		pathSize = this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextLengthA() + 1;
+		pathSize = this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextLength() + 1;
 		recipient = (LPTSTR)malloc(pathSize);
 		MALLOC_CHECK(recipient);
-		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextA(recipient, pathSize);
+		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowText(recipient, pathSize);
 
 		if (!strcmp(recipient, "")) {
 			if (encrypting) {
@@ -309,7 +309,7 @@ void CAgeDlg::OnBnClickedButton()
 		}
 	}
 	else if (this->IsDlgButtonChecked(RADIO_PASSPHRASE)) {
-		pathSize = this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextLengthA() + 1;
+		pathSize = this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextLength() + 1;
 		if (pathSize == 1 && encrypting) { // empty string, get generated password from rust
 			char* generated = get_passphrase();
 			passphrase = (LPTSTR)malloc(strlen(generated) + 1);
@@ -322,7 +322,7 @@ void CAgeDlg::OnBnClickedButton()
 		else {
 			passphrase = (LPTSTR)malloc(pathSize);
 			MALLOC_CHECK(passphrase);
-			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextA(passphrase, pathSize);
+			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowText(passphrase, pathSize);
 			// confirm password
 			ConfirmPassDlg confirmDlg = new ConfirmPassDlg;
 			if (confirmDlg.DoModal() != IDOK) {
