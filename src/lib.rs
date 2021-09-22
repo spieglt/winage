@@ -12,6 +12,7 @@ use rand::{
 };
 use secrecy::SecretString;
 
+use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
@@ -248,7 +249,6 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
             let identities = read_identities(
                 opts.recipient_or_identity_file.clone(),
                 error::DecryptError::IdentityNotFound,
-                #[cfg(feature = "ssh")]
                 error::DecryptError::UnsupportedKey,
             )?;
 
@@ -295,7 +295,6 @@ fn read_recipients(
             Ok(()) => (),
             Err(_e) => { // if we failed to parse as recipients list, try to parse as identity file
                 // Try parsing as a single multi-line SSH identity.
-                #[cfg(feature = "ssh")]
                 match age::ssh::Identity::from_buffer(
                     BufReader::new(File::open(&arg)?),
                     Some(arg.clone()),
@@ -384,15 +383,7 @@ fn parse_recipient(
 ) -> Result<(), error::EncryptError> {
     if let Ok(pk) = s.parse::<age::x25519::Recipient>() {
         recipients.push(Box::new(pk));
-    } else if let Some(pk) = {
-        #[cfg(feature = "ssh")]
-        {
-            s.parse::<age::ssh::Recipient>().ok().map(Box::new)
-        }
-
-        #[cfg(not(feature = "ssh"))]
-        None
-    } {
+    } else if let Some(pk) = s.parse::<age::ssh::Recipient>().ok().map(Box::new) {
         recipients.push(pk);
     } else if let Ok(recipient) = s.parse::<plugin::Recipient>() {
         plugin_recipients.push(recipient);

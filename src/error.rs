@@ -6,7 +6,6 @@ pub(crate) enum EncryptError {
     InvalidRecipient(String),
     Io(io::Error),
     PassphraseMissing,
-    #[cfg(feature = "ssh")]
     UnsupportedKey(String, age::ssh::UnsupportedKey),
 }
 
@@ -34,7 +33,6 @@ impl fmt::Display for EncryptError {
             ),
             EncryptError::Io(e) => write!(f, "{}", e),
             EncryptError::PassphraseMissing => write!(f, "Passphrase not provided"),
-            #[cfg(feature = "ssh")]
             EncryptError::UnsupportedKey(filename, k) => k.display(f, Some(filename.as_str())),
         }
     }
@@ -45,8 +43,6 @@ pub(crate) enum DecryptError {
     IdentityNotFound(String),
     Io(io::Error),
     MissingIdentities,
-    // #[cfg(not(unix))]
-    #[cfg(feature = "ssh")]
     UnsupportedKey(String, age::ssh::UnsupportedKey),
 }
 
@@ -71,7 +67,6 @@ impl fmt::Display for DecryptError {
             ),
             DecryptError::Io(e) => write!(f, "{}", e),
             DecryptError::MissingIdentities => write!(f, "Missing identities."),
-            #[cfg(feature = "ssh")]
             DecryptError::UnsupportedKey(filename, k) => k.display(f, Some(filename.as_str())),
         }
     }
