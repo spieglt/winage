@@ -13,6 +13,7 @@ IMPLEMENT_DYNAMIC(ConfirmPassDlg, CDialogEx)
 
 ConfirmPassDlg::ConfirmPassDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CONFIRM_PASS_DIALOG, pParent)
+	, confirmedPass(_T(""))
 {
 
 }
@@ -24,6 +25,7 @@ ConfirmPassDlg::~ConfirmPassDlg()
 void ConfirmPassDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_PASS_CONFIRMATION, confirmedPass);
 }
 
 
@@ -37,6 +39,6 @@ END_MESSAGE_MAP()
 
 void ConfirmPassDlg::OnBnClickedOk()
 {
-	this->GetDlgItem(IDC_PASS_CONFIRMATION)->GetWindowText(this->confirmedPassphrase);
+	//this->GetDlgItem(IDC_PASS_CONFIRMATION)->GetWindowText(this->confirmedPassphrase);
 	CDialogEx::OnOK();
 }

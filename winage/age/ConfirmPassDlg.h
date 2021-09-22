@@ -10,7 +10,6 @@ class ConfirmPassDlg : public CDialogEx
 public:
 	ConfirmPassDlg(CWnd* pParent = nullptr);   // standard constructor
 	virtual ~ConfirmPassDlg();
-	CString confirmedPassphrase;
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -23,4 +22,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedOk();
+	CString confirmedPass;
 };

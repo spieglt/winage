@@ -328,7 +328,7 @@ void CAgeDlg::OnBnClickedButton()
 			if (confirmDlg.DoModal() != IDOK) {
 				goto cleanup;
 			}
-			else if (strcmp(passphrase, confirmDlg.confirmedPassphrase.GetBuffer())) {
+			else if (strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer())) {
 				MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
 				goto cleanup;
 			}
