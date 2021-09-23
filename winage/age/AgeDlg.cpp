@@ -40,6 +40,8 @@ public:
 // Implementation
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	virtual BOOL OnInitDialog();
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
@@ -456,4 +458,17 @@ void CAgeDlg::OnEnChangeFileSelector()
 void CAgeDlg::OnBnClickedArmor()
 {
 	// Add your control notification handler code here
+}
+
+
+BOOL CAboutDlg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+	char* aboutMsg = "age (original Go implementation): https://age-encryption.org\r\n"
+		"rage (Rust implementation on which this is based): https://str4d.xyz/rage\r\n"
+		"winage (this project): https://winage.spiegl.dev";
+	this->GetDlgItem(IDC_ABOUT_MSG)->SetWindowText(aboutMsg);
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // EXCEPTION: OCX Property Pages should return FALSE
 }
