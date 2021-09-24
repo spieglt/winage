@@ -465,12 +465,13 @@ BOOL CAboutDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	char* aboutMsg =
-		"age is a simple, modern and secure file encryption tool, format, and Go library.\r\n"
+		"age is a simple, modern and secure file encryption tool, format, and Go library.\r\n\r\n"
 		"To generate a new identity, right-click a folder background and select \"Generate new age identity\".\r\n"
 		"To encrypt a file, right-click it and select \"Encrypt with age\".\r\n"
-		"To decrypt a file, double-click it and enter the passphrase or select the identity file.\r\n\r\n"
-		"age (original Go implementation): https://age-encryption.org\r\n"
-		"rage (Rust implementation on which this is based): https://str4d.xyz/rage\r\n"
+		"To decrypt a file, double-click it and enter the passphrase or select the identity file.\r\n"
+		"SSH private and public keys may be used in place of native age identities and recipients.\r\n\r\n"
+		"age (original Go implementation by Ben Cartwright-Cox and Filippo Valsorda): https://age-encryption.org\r\n"
+		"rage (Rust implementation on which this is based, by Jack Grigg): https://str4d.xyz/rage\r\n"
 		"winage (this project): https://winage.spiegl.dev";
 	this->GetDlgItem(IDC_ABOUT_MSG)->SetWindowText(aboutMsg);
 
