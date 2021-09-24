@@ -122,6 +122,7 @@ BOOL CAgeDlg::OnInitDialog()
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowText(__argv[2]);
 	}
 	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
+		this->SetWindowText("age - Decrypt file");
 		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowText("Select file to decrypt");
 		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowText("Decrypt");
 		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowText("Enter passphrase");
