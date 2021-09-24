@@ -185,6 +185,7 @@ BOOL CAgeDlg::OnInitDialog()
 				free_rust_string(retMessage);
 			}
 		}
+		exit(0);
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
