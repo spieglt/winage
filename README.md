@@ -5,6 +5,8 @@ This is a Windows GUI for the file encryption tool [age](https://age-encryption.
 
 The format specification is at age-encryption.org/v1. To discuss the spec or other age related topics, please email the mailing list at age-dev@googlegroups.com. age was designed by [@Benjojo12](https://twitter.com/Benjojo12) and [@FiloSottile](https://twitter.com/FiloSottile). rage was designed by [@str4d](https://twitter.com/str4d).
 
+https://user-images.githubusercontent.com/22626146/134601773-21d87db0-bbce-4a69-b508-2fb441bb86a4.mp4
+
 # Installation
 
 Install the MSI on the [releases](https://github.com/spieglt/winage/releases) page.
