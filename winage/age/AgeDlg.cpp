@@ -248,6 +248,7 @@ void CAgeDlg::OnBnClickedButton()
 	LPTSTR passphrase = NULL;
 	CString output;
 	char* outputName = NULL;
+	CString rustMessage = "";
 	struct COptions* cOptions = (struct COptions*)malloc(sizeof(struct COptions));
 	MALLOC_CHECK(cOptions);
 
@@ -324,14 +325,15 @@ void CAgeDlg::OnBnClickedButton()
 			passphrase = (LPTSTR)malloc(pathSize);
 			MALLOC_CHECK(passphrase);
 			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowText(passphrase, pathSize);
-			// confirm password
-			ConfirmPassDlg confirmDlg = new ConfirmPassDlg;
-			if (confirmDlg.DoModal() != IDOK) {
-				goto cleanup;
-			}
-			else if (strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer())) {
-				MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
-				goto cleanup;
+			if (encrypting) { // confirm password
+				ConfirmPassDlg confirmDlg = new ConfirmPassDlg;
+				if (confirmDlg.DoModal() != IDOK) {
+					goto cleanup;
+				}
+				else if (strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer())) {
+					MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
+					goto cleanup;
+				}
 			}
 		}
 
@@ -398,9 +400,9 @@ void CAgeDlg::OnBnClickedButton()
 
 	// call main rust routine
 	char* res = wrapper(cOptions);
+	rustMessage = res;
 	MessageBox(res, "Message", MB_OK);
 	free_rust_string(res);
-	//printf("%s\n", res);
 
 cleanup:
 	free(inputFile);
@@ -408,6 +410,10 @@ cleanup:
 	free(recipient);
 	free(passphrase);
 	free(cOptions);
+	if (!rustMessage.Left(7).Compare("Success")) {
+		exit(0);
+	}
+
 }
 
 
