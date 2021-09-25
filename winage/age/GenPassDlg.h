@@ -15,7 +15,7 @@ public:
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_GEN_PW_DIALOG };
+	enum { IDD = IDD_GEN_PASS_DIALOG };
 #endif
 
 protected:

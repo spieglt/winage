@@ -7,7 +7,6 @@
 #define IDS_ABOUTBOX                    101
 #define IDD_AGE_DIALOG                  102
 #define IDR_MAINFRAME                   128
-#define IDD_GEN_PW_DIALOG               133
 #define IDD_GEN_PASS_DIALOG             133
 #define IDD_CONFIRM_PASS_DIALOG         135
 #define ENCRYPT_BUTTON                  1002
