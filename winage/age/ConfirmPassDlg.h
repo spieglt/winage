@@ -23,4 +23,5 @@ protected:
 public:
 	afx_msg void OnBnClickedOk();
 	CString confirmedPass;
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };

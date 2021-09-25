@@ -42,6 +42,7 @@ public:
 	afx_msg void OnBnClickedLabel();
 	afx_msg void OnEnChangeFileSelector();
 	afx_msg void OnBnClickedArmor();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 struct COptions {

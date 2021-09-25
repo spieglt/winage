@@ -41,3 +41,19 @@ void ConfirmPassDlg::OnBnClickedOk()
 {
 	CDialogEx::OnOK();
 }
+
+
+BOOL ConfirmPassDlg::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
+		{
+			CWnd* wnd = GetFocus();
+			if (wnd && IsEditOrEditBrowse(wnd)) {
+				((CEdit*)wnd)->SetSel(0, -1);
+			}
+		}
+	}
+	return CDialogEx::PreTranslateMessage(pMsg);
+}

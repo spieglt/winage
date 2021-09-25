@@ -30,3 +30,17 @@ public:
 };
 
 extern CAgeApp theApp;
+
+static BOOL IsEditOrEditBrowse(CWnd* pWnd)
+{
+	if (!pWnd) return FALSE;
+	HWND hWnd = pWnd->GetSafeHwnd();
+	if (hWnd == NULL)
+		return FALSE;
+
+	char* editName = "Edit";
+	char* ebcName = "MFCEditBrowse";
+	char className[14];
+	return ::GetClassName(hWnd, className, 14) &&
+		(!_tcsicmp(className, editName) || !_tcsicmp(className, ebcName));
+}
