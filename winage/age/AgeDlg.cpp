@@ -400,11 +400,25 @@ void CAgeDlg::OnBnClickedButton()
 		}
 	}
 
+	// change window title to indicate we're busy
+	if (encrypting) {
+		this->SetWindowText("age - Encrypting...");
+	} else {
+		this->SetWindowText("age - Decrypting...");
+	}
+
 	// call main rust routine
 	char* res = wrapper(cOptions);
 	rustMessage = res;
 	MessageBox(res, "Message", MB_OK);
 	free_rust_string(res);
+
+	// change title back
+	if (encrypting) {
+		this->SetWindowText("age");
+	} else {
+		this->SetWindowText("age - Decrypt file");
+	}
 
 cleanup:
 	free(inputFile);
