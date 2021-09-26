@@ -24,6 +24,7 @@ GenPassDlg::~GenPassDlg()
 void GenPassDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, GENERATED_PASSWORD_BOX, genPassBox);
 }
 
 
@@ -51,9 +52,11 @@ BOOL GenPassDlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	// Add extra initialization here
-	this->GetDlgItem(GENERATED_PASSWORD_BOX)->SetWindowText(this->msg);
+	genPassBox.SetWindowText(this->msg);
+	this->GotoDlgCtrl((CWnd*)&genPassBox);
+	genPassBox.SetSel(0, -1);
 
-	return TRUE;  // return TRUE unless you set the focus to a control
+	return FALSE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
@@ -68,6 +71,13 @@ BOOL GenPassDlg::PreTranslateMessage(MSG* pMsg)
 			if (wnd && IsEditOrEditBrowse(wnd)) {
 				((CEdit*)wnd)->SetSel(0, -1);
 			}
+		}
+	}
+	else if (pMsg->message == WM_LBUTTONUP)
+	{
+		CWnd* wnd = GetFocus();
+		if (wnd && IsEditOrEditBrowse(wnd)) {
+			((CEdit*)wnd)->SetSel(0, -1);
 		}
 	}
 	return CDialogEx::PreTranslateMessage(pMsg);
