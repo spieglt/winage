@@ -5,8 +5,7 @@ This is a Windows GUI for the file encryption tool [age](https://age-encryption.
 
 The format specification is at age-encryption.org/v1. To discuss the spec or other age related topics, please email the mailing list at age-dev@googlegroups.com. age was designed by [@Benjojo12](https://twitter.com/Benjojo12) and [@FiloSottile](https://twitter.com/FiloSottile). rage was designed by [@str4d](https://twitter.com/str4d).
 
-
-
+https://user-images.githubusercontent.com/22626146/139507406-08803f91-f7d7-4c15-b69c-0f4494884786.mp4
 
 # Installation
 
