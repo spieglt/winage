@@ -1,5 +1,7 @@
 name: winage build
-on: [push]
+on:
+  release:
+    types: [published]
 jobs:
   windows-action:
     runs-on: windows-latest
@@ -18,4 +20,41 @@ jobs:
       # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: devenv.com /Rebuild Release winage\AgeSetup\AgeSetup.vdproj
       - run: dir winage\AgeSetup\Release
-      - run: dir
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: age-binary
+          path: winage\AgeSetup\Release\ageSetup.msi
+  upload:
+    name: Upload release binaries
+    if: ${{ github.event_name == 'release' }}
+    needs: windows-action
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: age-binary
+      - name: Upload release artifacts
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises;
+            const { repo: { owner, repo }, sha } = context;
+            const release = await github.repos.getReleaseByTag({
+              owner, repo,
+              tag: process.env.GITHUB_REF.replace("refs/tags/", ""),
+            });
+            console.log("Release:", { release });
+            for (let file of await fs.readdir(".")) {
+              console.log("Uploading", file);
+              await github.repos.uploadReleaseAsset({
+                owner, repo,
+                release_id: release.data.id,
+                name: file,
+                data: await fs.readFile(file),
+              });            
+            }
