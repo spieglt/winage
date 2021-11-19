@@ -14,13 +14,15 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-      - name: compile-rust
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
+      # - name: compile-rust
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: build
+      #     args: --release
       - name: compile-vs
         uses: ilammy/msvc-dev-cmd@v1.4.1
       - run: | 
+          Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
+          VSIXInstaller.exe installerExtension.vsix
           msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: echo "🍏 This job's status is ${{ job.status }}."
