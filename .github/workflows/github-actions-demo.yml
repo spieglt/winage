@@ -14,7 +14,12 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-      - name: compile
+      - name: compile-rust
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      - name: compile-vs
         uses: ilammy/msvc-dev-cmd@v1.4.1
       - run: | 
           msbuild.exe winage\age.sln
