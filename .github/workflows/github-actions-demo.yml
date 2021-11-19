@@ -10,11 +10,11 @@ jobs:
       - run: VSIXInstaller.exe installerExtension.vsix
       - name: Check out repository code
         uses: actions/checkout@v2
-      # - name: compile-rust
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: build
-      #     args: --release
+      - name: compile-rust
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
       # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: devenv.com /Rebuild Release winage\AgeSetup\AgeSetup.vdproj
       - run: echo "🍏 This job's status is ${{ job.status }}."
