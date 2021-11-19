@@ -4,6 +4,10 @@ jobs:
   windows-action:
     runs-on: windows-latest
     steps:
+      - name: compile-vs
+        uses: ilammy/msvc-dev-cmd@v1.4.1
+      - run: Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
+      - run: VSIXInstaller.exe installerExtension.vsix
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: compile-rust
@@ -11,10 +15,6 @@ jobs:
         with:
           command: build
           args: --release
-      - name: compile-vs
-        uses: ilammy/msvc-dev-cmd@v1.4.1
-      # - run: Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
-      # - run: VSIXInstaller.exe installerExtension.vsix
       - run: | 
           msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: echo "🍏 This job's status is ${{ job.status }}."
