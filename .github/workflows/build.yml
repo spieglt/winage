@@ -17,3 +17,5 @@ jobs:
           args: --release
       # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: devenv.com /Rebuild Release winage\AgeSetup\AgeSetup.vdproj
+      - run: dir winage\AgeSetup\Release
+      - run: dir
