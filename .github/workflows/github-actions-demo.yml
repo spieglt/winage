@@ -4,16 +4,16 @@ jobs:
   windows-action:
     runs-on: windows-latest
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      # - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      # - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      # - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Check out repository code
         uses: actions/checkout@v2
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
+      # - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      # - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      # - name: List files in the repository
+      #   run: |
+      #     ls ${{ github.workspace }}
       # - name: compile-rust
       #   uses: actions-rs/cargo@v1
       #   with:
@@ -21,8 +21,8 @@ jobs:
       #     args: --release
       - name: compile-vs
         uses: ilammy/msvc-dev-cmd@v1.4.1
+      # - run: Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
+      # - run: VSIXInstaller.exe installerExtension.vsix
       - run: | 
-          Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
-          VSIXInstaller.exe installerExtension.vsix
           msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: echo "🍏 This job's status is ${{ job.status }}."
