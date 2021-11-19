@@ -6,7 +6,7 @@ jobs:
     steps:
       - name: compile-vs
         uses: ilammy/msvc-dev-cmd@v1.4.1
-      - run: Invoke-WebRequest "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage" -OutFile ./installerExtenxion.vsix
+      - run: Invoke-WebRequest "https://github.com/spieglt/winage/raw/actions/winage/InstallerProjects.vsix" -OutFile ./installerExtenxion.vsix
       - run: VSIXInstaller.exe installerExtension.vsix
       - name: Check out repository code
         uses: actions/checkout@v2
