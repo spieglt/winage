@@ -22,5 +22,5 @@ jobs:
       - name: compile-vs
         uses: ilammy/msvc-dev-cmd@v1.4.1
       - run: | 
-          msbuild.exe winage\age.sln
+          msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: echo "🍏 This job's status is ${{ job.status }}."
