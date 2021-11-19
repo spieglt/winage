@@ -4,20 +4,19 @@ jobs:
   windows-action:
     runs-on: windows-latest
     steps:
-      - name: compile-vs
-        uses: ilammy/msvc-dev-cmd@v1.4.1
-      - run: Invoke-WebRequest "https://github.com/spieglt/winage/raw/actions/winage/InstallerProjects.vsix" -OutFile ./installerExtenxion.vsix
-      - run: VSIXInstaller.exe installerExtension.vsix
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: compile-rust
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-      - run: | 
-          msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
-          devenv.exe winage\ageSetup\AgeSetup.vdproj
+      # - name: compile-vs
+      #   uses: ilammy/msvc-dev-cmd@v1.4.1
+      # - run: Invoke-WebRequest "https://github.com/spieglt/winage/raw/actions/winage/InstallerProjects.vsix" -OutFile ./installerExtenxion.vsix
+      # - run: VSIXInstaller.exe installerExtension.vsix
+      # - name: Check out repository code
+      #   uses: actions/checkout@v2
+      # - name: compile-rust
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: build
+      #     args: --release
+      # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
+      - run: devenv.exe winage\ageSetup\AgeSetup.vdproj
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
       
