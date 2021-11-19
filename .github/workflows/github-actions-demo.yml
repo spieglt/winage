@@ -17,6 +17,7 @@ jobs:
           args: --release
       - run: | 
           msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
+          devenv.exe winage\ageSetup\AgeSetup.vdproj
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
       
