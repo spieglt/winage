@@ -18,6 +18,7 @@ jobs:
       # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
       - run: devenv.com /Rebuild Release winage\AgeSetup\AgeSetup.vdproj
       - run: dir winage\AgeSetup\Release
+      - run: signtool.exe sign /p "${{ secrets.SIGN_PASS }}" /f .github\workflows\certs\PKCS7.pfx winage\AgeSetup\Release\ageSetup.msi
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v2
         with:
