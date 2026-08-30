@@ -1,59 +1,79 @@
 name: winage build
+
 on:
   release:
     types: [published]
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
 jobs:
-  windows-action:
+  build:
     runs-on: windows-latest
-    steps:
-      - name: compile-vs
-        uses: ilammy/msvc-dev-cmd@v1.4.1
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: compile-rust
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-      # - run: msbuild.exe winage\age.sln /property:Configuration=Release /property:Platform=x64
-      - run: devenv.com /Rebuild Release winage\AgeSetup\AgeSetup.vdproj
-      - run: dir winage\AgeSetup\Release
-      - run: signtool.exe sign /p "${{ secrets.SIGN_PASS }}" /fd SHA256 /f .github\workflows\certs\PKCS7.pfx winage\AgeSetup\Release\ageSetup.msi
-      - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: age-binaries
-          path: winage\AgeSetup\Release\ageSetup.msi
-  upload:
-    name: Upload release binaries
-    if: ${{ github.event_name == 'release' }}
-    needs: windows-action
     permissions:
       contents: write
-    runs-on: windows-latest
     steps:
-      - name: Download workflow artifacts
-        uses: actions/download-artifact@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          name: age-binaries
-      - name: Upload release artifacts
-        uses: actions/github-script@v3
+          arch: x64
+
+      - name: Update Rust toolchain
+        run: rustup update --no-self-update stable
+
+      - name: Test Rust library
+        run: cargo test --release
+
+      - name: Build Rust static library
+        run: cargo build --release
+
+      - name: Build MFC front end
+        run: msbuild winage\age.sln /t:age /p:Configuration=Release /p:Platform=x64 /v:minimal
+
+      # Requires the "Microsoft Visual Studio Installer Projects" extension;
+      # devenv is the only thing that can build a .vdproj.
+      - name: Build MSI installer
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -property installationPath
+          $devenv = Join-Path $vsPath "Common7\IDE\devenv.com"
+          & $devenv winage\age.sln /Rebuild "Release|x64" /Project winage\ageSetup\ageSetup.vdproj
+          if ($LASTEXITCODE -ne 0) { throw "installer build failed with exit code $LASTEXITCODE" }
+
+      # /tr timestamps the signature so it stays valid after the certificate
+      # expires. The v1.0 MSI was signed without one and no longer verifies.
+      - name: Sign installer
+        if: github.event_name == 'release'
+        env:
+          SIGN_CERT_BASE64: ${{ secrets.SIGN_CERT_BASE64 }}
+          SIGN_PASS: ${{ secrets.SIGN_PASS }}
+        run: |
+          if (-not $env:SIGN_CERT_BASE64) { throw "SIGN_CERT_BASE64 secret is not set" }
+          $cert = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+          [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:SIGN_CERT_BASE64))
+          try {
+            signtool.exe sign /f $cert /p $env:SIGN_PASS /fd SHA256 `
+              /tr http://timestamp.sectigo.com /td SHA256 `
+              winage\ageSetup\Release\ageSetup.msi
+            if ($LASTEXITCODE -ne 0) { throw "signing failed with exit code $LASTEXITCODE" }
+            signtool.exe verify /pa /v winage\ageSetup\Release\ageSetup.msi
+            if ($LASTEXITCODE -ne 0) { throw "signature verification failed" }
+          } finally {
+            Remove-Item $cert -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require("fs").promises;
-            const { repo: { owner, repo }, sha } = context;
-            const release = await github.repos.getReleaseByTag({
-              owner, repo,
-              tag: process.env.GITHUB_REF.replace("refs/tags/", ""),
-            });
-            console.log("Release:", { release });
-            for (let file of await fs.readdir(".")) {
-              console.log("Uploading", file);
-              await github.repos.uploadReleaseAsset({
-                owner, repo,
-                release_id: release.data.id,
-                name: file,
-                data: await fs.readFile(file),
-              });            
-            }
+          name: winage-msi
+          path: winage\ageSetup\Release\ageSetup.msi
+          if-no-files-found: error
+
+      - name: Attach installer to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ github.event.release.tag_name }} winage\ageSetup\Release\ageSetup.msi --clobber
