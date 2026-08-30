@@ -22,6 +22,49 @@
 	} \
 }
 
+// The Rust side expects UTF-8; this MBCS build's strings are in the ANSI codepage.
+static char* AnsiToUtf8(const char* ansi)
+{
+	if (ansi == NULL) {
+		return NULL;
+	}
+	int wideLen = MultiByteToWideChar(CP_ACP, 0, ansi, -1, NULL, 0);
+	if (wideLen <= 0) {
+		return NULL;
+	}
+	wchar_t* wide = (wchar_t*)malloc(wideLen * sizeof(wchar_t));
+	if (wide == NULL) {
+		return NULL;
+	}
+	MultiByteToWideChar(CP_ACP, 0, ansi, -1, wide, wideLen);
+	char* utf8 = NULL;
+	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wide, -1, NULL, 0, NULL, NULL);
+	if (utf8Len > 0) {
+		utf8 = (char*)malloc(utf8Len);
+		if (utf8 != NULL) {
+			WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Len, NULL, NULL);
+		}
+	}
+	SecureZeroMemory(wide, wideLen * sizeof(wchar_t)); // may hold a passphrase
+	free(wide);
+	return utf8;
+}
+
+static CStringW Utf8ToWide(const char* utf8)
+{
+	CStringW result;
+	if (utf8 == NULL) {
+		return result;
+	}
+	int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, NULL, 0);
+	if (wideLen <= 0) {
+		return result;
+	}
+	MultiByteToWideChar(CP_UTF8, 0, utf8, -1, result.GetBuffer(wideLen), wideLen);
+	result.ReleaseBuffer();
+	return result;
+}
+
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialogEx
@@ -77,11 +120,8 @@ BEGIN_MESSAGE_MAP(CAgeDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(ENCRYPT_BUTTON, &CAgeDlg::OnBnClickedButton)
-	ON_EN_CHANGE(PASSPHRASE_BOX, &CAgeDlg::OnEnChangeBox)
 	ON_BN_CLICKED(RADIO_PASSPHRASE, &CAgeDlg::OnBnClickedPassphrase)
 	ON_BN_CLICKED(RADIO_IDENTITY_RECIPIENT, &CAgeDlg::OnBnClickedIdentityRecipient)
-	ON_BN_CLICKED(ENCRYPT_LABEL, &CAgeDlg::OnBnClickedLabel)
-	ON_BN_CLICKED(IDC_ARMOR, &CAgeDlg::OnBnClickedArmor)
 END_MESSAGE_MAP()
 
 
@@ -134,17 +174,23 @@ BOOL CAgeDlg::OnInitDialog()
 		if (__argc > 2) { // second arg should be filename
 			if (!PathFileExists(__argv[2])) {
 				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
-				exit(1);
+				EndDialog(IDCANCEL);
+				return TRUE;
 			}
 			// detect and handle authentication mode
-			char* mode = get_decryption_mode(__argv[2]);
-			if (!strcmp(mode, "recipients")) {
+			char* pathUtf8 = AnsiToUtf8(__argv[2]);
+			char* mode = pathUtf8 != NULL ? get_decryption_mode(pathUtf8) : NULL;
+			free(pathUtf8);
+			BOOL isRecipients = mode != NULL && !strcmp(mode, "recipients");
+			BOOL isPassphrase = mode != NULL && !strcmp(mode, "passphrase");
+			free_rust_string(mode);
+			if (isRecipients) {
 				this->CheckDlgButton(RADIO_IDENTITY_RECIPIENT, BST_CHECKED);
 				this->CheckDlgButton(RADIO_PASSPHRASE, BST_UNCHECKED);
 				this->GetDlgItem(RADIO_PASSPHRASE)->EnableWindow(false);
 				this->OnBnClickedIdentityRecipient();
 			}
-			else if (!strcmp(mode, "passphrase")) {
+			else if (isPassphrase) {
 				this->CheckDlgButton(RADIO_PASSPHRASE, BST_CHECKED);
 				this->CheckDlgButton(RADIO_IDENTITY_RECIPIENT, BST_UNCHECKED);
 				this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->EnableWindow(false);
@@ -152,13 +198,13 @@ BOOL CAgeDlg::OnInitDialog()
 			}
 			else { // error
 				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
-				exit(1);
+				EndDialog(IDCANCEL);
+				return TRUE;
 			}
-			free_rust_string(mode);
 		}
 	}
 	if (__argc > 1 && !strcmp(__argv[1], "generate")) {
-		CFileDialog* outputDiag = new CFileDialog(
+		CFileDialog outputDiag(
 			FALSE,
 			"txt",
 			"age-identity",
@@ -168,25 +214,29 @@ BOOL CAgeDlg::OnInitDialog()
 			0,
 			TRUE
 		);
-		INT_PTR outputRes = outputDiag->DoModal();
+		INT_PTR outputRes = outputDiag.DoModal();
 		if (outputRes == IDOK) {
-			CString output = outputDiag->GetPathName();
+			CString output = outputDiag.GetPathName();
 			if (strcmp(output.GetBuffer(), "")) {
-				char* retMessage = generate_identity(output.GetBuffer());
-				if (!strcmp(retMessage, "ok")) {
+				char* outputUtf8 = AnsiToUtf8(output.GetBuffer());
+				char* retMessage = outputUtf8 != NULL ? generate_identity(outputUtf8) : NULL;
+				free(outputUtf8);
+				if (retMessage != NULL && !strcmp(retMessage, "ok")) {
 					CString msg = "Identity file successfully created at: ";
 					msg += output;
 					MessageBox(msg, "Identity created", MB_OK | MB_ICONINFORMATION);
 				}
 				else {
-					CString msg = "Error generating identity file: ";
-					msg += retMessage;
-					MessageBox(msg, "Error", MB_OK | MB_ICONERROR);
+					CStringW msg = L"Error generating identity file: ";
+					msg += Utf8ToWide(retMessage);
+					MessageBoxW(this->m_hWnd, msg, L"Error", MB_OK | MB_ICONERROR);
 				}
 				free_rust_string(retMessage);
 			}
 		}
-		exit(0);
+		// generate mode never shows the main dialog
+		EndDialog(IDOK);
+		return TRUE;
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -248,6 +298,11 @@ void CAgeDlg::OnBnClickedButton()
 	LPTSTR recipient = NULL;
 	LPTSTR inputFile = NULL;
 	LPTSTR passphrase = NULL;
+	char* inputUtf8 = NULL;
+	char* outputUtf8 = NULL;
+	char* passphraseUtf8 = NULL;
+	char* recipientUtf8 = NULL;
+	CFileDialog* outputDiag = NULL;
 	CString output;
 	char* outputName = NULL;
 	CString rustMessage = "";
@@ -280,8 +335,9 @@ void CAgeDlg::OnBnClickedButton()
 		strcpy_s(outputName, bigSize + 4, inputFile);
 		strcat_s(outputName, bigSize + 4, ".age");
 	} else { // chop ".age" extension if present
-		LPTSTR lastFour = inputFile + (bigSize - 5); // when counting backwards from end of string, must account for null byte
-		if (bigSize > 5 && !strcmp(lastFour, ".age")) {
+		// when counting backwards from end of string, must account for null byte;
+		// the length check has to come first or the offset underflows
+		if (bigSize > 5 && !strcmp(inputFile + (bigSize - 5), ".age")) {
 			outputName = (char*)malloc(bigSize);
 			MALLOC_CHECK(outputName);
 			strncpy_s(outputName, bigSize, inputFile, bigSize - 5);
@@ -316,10 +372,17 @@ void CAgeDlg::OnBnClickedButton()
 		pathSize = this->GetDlgItem(PASSPHRASE_BOX)->GetWindowTextLength() + 1;
 		if (pathSize == 1 && encrypting) { // empty string, get generated password from rust
 			char* generated = get_passphrase();
-			passphrase = (LPTSTR)malloc(strlen(generated) + 1);
+			if (generated == NULL) {
+				MessageBox("Could not generate a passphrase.", "Error", MB_OK | MB_ICONERROR);
+				goto cleanup;
+			}
+			size_t generatedSize = strlen(generated) + 1;
+			passphrase = (LPTSTR)malloc(generatedSize);
+			if (passphrase != NULL) {
+				strcpy_s(passphrase, generatedSize, generated);
+			}
+			free_rust_string(generated); // zeroes the passphrase
 			MALLOC_CHECK(passphrase);
-			strcpy_s(passphrase, strlen(generated) + 1, generated);
-			free_rust_string(generated);
 			GenPassDlg gpd(passphrase);
 			gpd.DoModal();
 		}
@@ -328,25 +391,27 @@ void CAgeDlg::OnBnClickedButton()
 			MALLOC_CHECK(passphrase);
 			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowText(passphrase, pathSize);
 			if (encrypting) { // confirm password
-				ConfirmPassDlg confirmDlg = new ConfirmPassDlg;
+				ConfirmPassDlg confirmDlg;
 				if (confirmDlg.DoModal() != IDOK) {
 					goto cleanup;
 				}
-				else if (strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer())) {
+				BOOL matched = !strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer());
+				SecureZeroMemory(confirmDlg.confirmedPass.GetBuffer(), confirmDlg.confirmedPass.GetLength());
+				confirmDlg.confirmedPass.ReleaseBuffer(0);
+				if (!matched) {
 					MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
 					goto cleanup;
 				}
 			}
 		}
 
-		if (!encrypting && !strcmp(passphrase, "")) {
+		if (!encrypting && (passphrase == NULL || !strcmp(passphrase, ""))) {
 			MessageBox("Must provide decryption passphrase.", "Missing Passphrase", MB_OK | MB_ICONERROR);
 			goto cleanup;
 		}
 	}
 
 	// select output filename
-	CFileDialog* outputDiag = NULL;
 	if (!encrypting) {
 		outputDiag = new CFileDialog(
 			false,
@@ -381,22 +446,32 @@ void CAgeDlg::OnBnClickedButton()
 		goto cleanup;
 	}
 
-	// fill out options for rust
+	// fill out options for rust, converting strings to UTF-8
+	inputUtf8 = AnsiToUtf8(inputFile);
+	MALLOC_CHECK(inputUtf8);
+	outputUtf8 = AnsiToUtf8(output.GetBuffer());
+	MALLOC_CHECK(outputUtf8);
+	if (passphrase != NULL) {
+		passphraseUtf8 = AnsiToUtf8(passphrase);
+		MALLOC_CHECK(passphraseUtf8);
+	}
 	memset(cOptions, 0, sizeof(struct COptions));
-	cOptions->input = inputFile;
+	cOptions->input = inputUtf8;
 	cOptions->encrypt = encrypting;
 	cOptions->using_passphrase = usingPassphrase;
-	cOptions->passphrase = passphrase;
+	cOptions->passphrase = passphraseUtf8;
 	cOptions->max_work_factor = 0;
 	cOptions->armor = armor;
-	cOptions->output = output.GetBuffer();
+	cOptions->output = outputUtf8;
 
 	if (recipient != NULL && strcmp(recipient, "")) {
+		recipientUtf8 = AnsiToUtf8(recipient);
+		MALLOC_CHECK(recipientUtf8);
 		if (PathFileExists(recipient)) {
-			cOptions->recipients_file = recipient;
+			cOptions->recipient_or_identity_file = recipientUtf8;
 		}
 		else {
-			cOptions->recipient = recipient;
+			cOptions->recipient = recipientUtf8;
 		}
 	}
 
@@ -410,7 +485,7 @@ void CAgeDlg::OnBnClickedButton()
 	// call main rust routine
 	char* res = wrapper(cOptions);
 	rustMessage = res;
-	MessageBox(res, "Message", MB_OK);
+	MessageBoxW(this->m_hWnd, Utf8ToWide(res), L"Message", MB_OK);
 	free_rust_string(res);
 
 	// change title back
@@ -421,26 +496,26 @@ void CAgeDlg::OnBnClickedButton()
 	}
 
 cleanup:
+	if (passphrase != NULL) {
+		SecureZeroMemory(passphrase, strlen(passphrase));
+	}
+	if (passphraseUtf8 != NULL) {
+		SecureZeroMemory(passphraseUtf8, strlen(passphraseUtf8));
+	}
 	free(inputFile);
 	free(outputName);
 	free(recipient);
 	free(passphrase);
+	free(inputUtf8);
+	free(outputUtf8);
+	free(passphraseUtf8);
+	free(recipientUtf8);
 	free(cOptions);
+	delete outputDiag;
 	if (!rustMessage.Left(7).Compare("Success")) {
-		exit(0);
+		EndDialog(IDOK);
 	}
 
-}
-
-
-void CAgeDlg::OnEnChangeBox()
-{
-	// If this is a RICHEDIT control, the control will not
-	// send this notification unless you override the CDialogEx::OnInitDialog()
-	// function and call CRichEditCtrl().SetEventMask()
-	// with the ENM_CHANGE flag ORed into the mask.
-
-	// Add your control notification handler code here
 }
 
 
@@ -459,27 +534,6 @@ void CAgeDlg::OnBnClickedIdentityRecipient()
 	this->GetDlgItem(PASSPHRASE_LABEL)->ShowWindow(SW_HIDE);
 	this->GetDlgItem(RECIPIENT_LABEL)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->ShowWindow(SW_SHOW);
-}
-
-
-void CAgeDlg::OnBnClickedLabel()
-{
-}
-
-
-void CAgeDlg::OnEnChangeFileSelector()
-{
-	// If this is a RICHEDIT control, the control will not
-	// send this notification unless you override the CDialogEx::OnInitDialog()
-	// function and call CRichEditCtrl().SetEventMask()
-	// with the ENM_CHANGE flag ORed into the mask.
-
-	// Add your control notification handler code here
-}
-
-void CAgeDlg::OnBnClickedArmor()
-{
-	// Add your control notification handler code here
 }
 
 
@@ -503,15 +557,8 @@ BOOL CAboutDlg::OnInitDialog()
 
 BOOL CAgeDlg::PreTranslateMessage(MSG* pMsg)
 {
-	if (pMsg->message == WM_KEYDOWN)
-	{
-		if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
-		{
-			CWnd* wnd = GetFocus();
-			if (wnd && IsEditOrEditBrowse(wnd)) {
-				((CEdit*)wnd)->SetSel(0, -1);
-			}
-		}
+	if (IsSelectAllKey(pMsg)) {
+		SelectAllInFocusedEdit();
 	}
 	return CDialogEx::PreTranslateMessage(pMsg);
 }

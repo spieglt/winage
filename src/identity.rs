@@ -1,5 +1,5 @@
+use age::secrecy::ExposeSecret;
 use age::x25519;
-use secrecy::ExposeSecret;
 use std::fs::File;
 use std::io::{Result, Write};
 

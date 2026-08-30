@@ -3,10 +3,12 @@
 //
 
 #pragma once
+// Libraries the Rust static library depends on.
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "bcrypt.lib")
+#pragma comment(lib, "ntdll.lib")
 
 // CAgeDlg dialog
 class CAgeDlg : public CDialogEx
@@ -36,12 +38,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButton();
-	afx_msg void OnEnChangeBox();
 	afx_msg void OnBnClickedPassphrase();
 	afx_msg void OnBnClickedIdentityRecipient();
-	afx_msg void OnBnClickedLabel();
-	afx_msg void OnEnChangeFileSelector();
-	afx_msg void OnBnClickedArmor();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
@@ -53,7 +51,7 @@ struct COptions {
 	unsigned char max_work_factor;
 	BOOL armor;
 	const char* recipient;
-	const char* recipients_file;
+	const char* recipient_or_identity_file;
 	const char* output;
 };
 

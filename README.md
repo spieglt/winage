@@ -21,9 +21,15 @@ To decrypt an `.age` file, double-click it and specify the passphrase or identit
 
 To encrypt to multiple recipients, specify a text file with one recipient on each line. To encrypt to a single recipient, you can paste it directly.
 
+# Plugins
+
+age plugins such as `age-plugin-yubikey` and `age-plugin-pq` work with winage. Put the plugin's `.exe` either in a directory on your `PATH` or in the winage install folder next to `age.exe`, then use its recipients and identities as you would native ones.
+
+Windows hands a program the `PATH` its parent had, so a `PATH` you changed after signing in won't reach winage until you sign out and back in. Dropping the plugin next to `age.exe` avoids that.
+
 # Compilation instructions
 
-1. Install [Rust](https://www.rust-lang.org/tools/install), open `winage`, and run `cargo build --release`.
+1. Install [Rust](https://www.rust-lang.org/tools/install), open `winage`, and run `cargo build --release`. Run `cargo test` to exercise the encryption and decryption paths.
 
 2. Install and open Visual Studio 2019. Go to `Extensions` > `Manage Extensions` and install `Microsoft Visual Studio Installer Projects`. Open the `winage\winage\age.sln` Solution, select `Release`, `x64`, and build.
 

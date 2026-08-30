@@ -1,0 +1,313 @@
+//! Round-trip tests driving the same FFI entry points the C++ front end calls.
+
+use super::*;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::ptr;
+
+fn scratch(name: &str) -> PathBuf {
+    let mut p = std::env::temp_dir();
+    p.push(format!("winage-test-{}-{}", std::process::id(), name));
+    p
+}
+
+/// Copies the returned message and frees it the way the C++ side does.
+fn take_message(ptr: *const c_char) -> String {
+    assert!(!ptr.is_null(), "FFI returned a null string");
+    let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+    unsafe { free_rust_string(ptr as *mut c_char) };
+    s
+}
+
+fn run(
+    input: &Path,
+    output: &Path,
+    encrypt: bool,
+    passphrase: Option<&str>,
+    recipient: Option<&str>,
+    recipient_file: Option<&Path>,
+    armor: bool,
+) -> String {
+    let input_c = CString::new(input.to_str().unwrap()).unwrap();
+    let output_c = CString::new(output.to_str().unwrap()).unwrap();
+    let pass_c = passphrase.map(|p| CString::new(p).unwrap());
+    let rec_c = recipient.map(|r| CString::new(r).unwrap());
+    let recf_c = recipient_file.map(|r| CString::new(r.to_str().unwrap()).unwrap());
+
+    let mut opts = COptions {
+        input: input_c.as_ptr(),
+        encrypt: if encrypt { 1 } else { 0 },
+        using_passphrase: if passphrase.is_some() { 1 } else { 0 },
+        passphrase: pass_c.as_ref().map_or(ptr::null(), |c| c.as_ptr()),
+        max_work_factor: 0,
+        armor: if armor { 1 } else { 0 },
+        recipient: rec_c.as_ref().map_or(ptr::null(), |c| c.as_ptr()),
+        recipient_or_identity_file: recf_c.as_ref().map_or(ptr::null(), |c| c.as_ptr()),
+        output: output_c.as_ptr(),
+    };
+    take_message(wrapper(&mut opts))
+}
+
+fn public_key_of(identity_file: &Path) -> String {
+    let contents = fs::read_to_string(identity_file).unwrap();
+    contents
+        .lines()
+        .find_map(|l| l.strip_prefix("# public key: "))
+        .expect("identity file records its public key")
+        .to_string()
+}
+
+fn make_identity(name: &str) -> PathBuf {
+    let path = scratch(name);
+    let path_c = CString::new(path.to_str().unwrap()).unwrap();
+    let msg = take_message(unsafe { generate_identity(path_c.as_ptr()) });
+    assert_eq!(msg, "ok", "generate_identity failed");
+    path
+}
+
+#[test]
+fn passphrase_round_trip() {
+    let plain = scratch("pp.txt");
+    let enc = scratch("pp.txt.age");
+    let dec = scratch("pp.out.txt");
+    fs::write(&plain, b"hello age").unwrap();
+
+    let msg = run(&plain, &enc, true, Some("correct horse"), None, None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, Some("correct horse"), None, None, false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"hello age");
+
+    for p in [plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn wrong_passphrase_fails() {
+    let plain = scratch("wrong.txt");
+    let enc = scratch("wrong.txt.age");
+    let dec = scratch("wrong.out.txt");
+    fs::write(&plain, b"secret").unwrap();
+
+    run(&plain, &enc, true, Some("right"), None, None, false);
+    let msg = run(&enc, &dec, false, Some("wrong"), None, None, false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    for p in [plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn armored_round_trip() {
+    let plain = scratch("armor.txt");
+    let enc = scratch("armor.txt.age");
+    let dec = scratch("armor.out.txt");
+    fs::write(&plain, b"armored payload").unwrap();
+
+    run(&plain, &enc, true, Some("pw"), None, None, true);
+    let armored = fs::read_to_string(&enc).unwrap();
+    assert!(armored.starts_with("-----BEGIN AGE ENCRYPTED FILE-----"));
+
+    let msg = run(&enc, &dec, false, Some("pw"), None, None, false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"armored payload");
+
+    for p in [plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn identity_file_round_trip() {
+    let id = make_identity("id.txt");
+    let plain = scratch("id-plain.txt");
+    let enc = scratch("id-plain.txt.age");
+    let dec = scratch("id-plain.out.txt");
+    fs::write(&plain, b"to a recipient").unwrap();
+
+    // Encrypting with an identity file exercises IdentityFile::to_recipients.
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"to a recipient");
+
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn pasted_recipient_round_trip() {
+    let id = make_identity("pasted-id.txt");
+    let recipient = public_key_of(&id);
+    let plain = scratch("pasted.txt");
+    let enc = scratch("pasted.txt.age");
+    let dec = scratch("pasted.out.txt");
+    fs::write(&plain, b"pasted key").unwrap();
+
+    let msg = run(&plain, &enc, true, None, Some(&recipient), None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"pasted key");
+
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn recipients_list_round_trip() {
+    let id_a = make_identity("multi-a.txt");
+    let id_b = make_identity("multi-b.txt");
+    let list = scratch("recipients.txt");
+    fs::write(
+        &list,
+        format!(
+            "# recipients\n{}\n\n{}\n",
+            public_key_of(&id_a),
+            public_key_of(&id_b)
+        ),
+    )
+    .unwrap();
+
+    let plain = scratch("multi.txt");
+    let enc = scratch("multi.txt.age");
+    fs::write(&plain, b"two recipients").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&list), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    // Either identity alone must be able to decrypt it.
+    for (i, id) in [&id_a, &id_b].iter().enumerate() {
+        let dec = scratch(&format!("multi.out{}.txt", i));
+        let msg = run(&enc, &dec, false, None, None, Some(id), false);
+        assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+        assert_eq!(fs::read(&dec).unwrap(), b"two recipients");
+        let _ = fs::remove_file(dec);
+    }
+
+    for p in [id_a, id_b, list, plain, enc] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn non_ascii_paths_round_trip() {
+    // The C++ side hands us UTF-8; umlauts in a path must survive.
+    let plain = scratch("grüße-öäü.txt");
+    let enc = scratch("grüße-öäü.txt.age");
+    let dec = scratch("grüße-öäü.out.txt");
+    fs::write(&plain, b"umlauts").unwrap();
+
+    let msg = run(&plain, &enc, true, Some("pw"), None, None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+    assert!(enc.exists(), "encrypted file not written to the umlaut path");
+
+    let msg = run(&enc, &dec, false, Some("pw"), None, None, false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"umlauts");
+
+    for p in [plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn decryption_mode_detection() {
+    let plain = scratch("mode.txt");
+    fs::write(&plain, b"x").unwrap();
+
+    let pass_enc = scratch("mode-pass.age");
+    run(&plain, &pass_enc, true, Some("pw"), None, None, false);
+    let path_c = CString::new(pass_enc.to_str().unwrap()).unwrap();
+    let mode = take_message(unsafe { get_decryption_mode(path_c.as_ptr()) });
+    assert_eq!(mode, "passphrase");
+
+    let id = make_identity("mode-id.txt");
+    let rec_enc = scratch("mode-rec.age");
+    run(&plain, &rec_enc, true, None, None, Some(&id), false);
+    let path_c = CString::new(rec_enc.to_str().unwrap()).unwrap();
+    let mode = take_message(unsafe { get_decryption_mode(path_c.as_ptr()) });
+    assert_eq!(mode, "recipients");
+
+    for p in [plain, pass_enc, rec_enc, id] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn decryption_mode_rejects_non_age_file() {
+    let junk = scratch("junk.bin");
+    fs::write(&junk, b"not an age file at all").unwrap();
+    let path_c = CString::new(junk.to_str().unwrap()).unwrap();
+    let mode = take_message(unsafe { get_decryption_mode(path_c.as_ptr()) });
+    assert_ne!(mode, "passphrase");
+    assert_ne!(mode, "recipients");
+    let _ = fs::remove_file(junk);
+}
+
+#[test]
+fn null_pointers_are_rejected() {
+    let msg = take_message(wrapper(ptr::null_mut()));
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    let msg = take_message(unsafe { get_decryption_mode(ptr::null()) });
+    assert!(msg.contains("null"), "{}", msg);
+
+    // Freeing null must be a no-op rather than a crash.
+    unsafe { free_rust_string(ptr::null_mut()) };
+}
+
+#[test]
+fn missing_recipient_is_an_error() {
+    let plain = scratch("norecip.txt");
+    let enc = scratch("norecip.age");
+    fs::write(&plain, b"x").unwrap();
+    let msg = run(&plain, &enc, true, None, None, None, false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+    for p in [plain, enc] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn generated_passphrase_is_ten_distinct_words() {
+    let p = take_message(get_passphrase());
+    let words: Vec<&str> = p.split('-').collect();
+    assert_eq!(words.len(), 10, "{}", p);
+    assert!(words.iter().all(|w| !w.is_empty()), "{}", p);
+    assert!(
+        words
+            .iter()
+            .all(|w| w.chars().all(|c| c.is_ascii_lowercase())),
+        "{}",
+        p
+    );
+    // Two calls must not produce the same passphrase.
+    let q = take_message(get_passphrase());
+    assert_ne!(p, q);
+}
+
+#[test]
+fn messages_have_no_bidi_isolation_marks() {
+    // age localizes errors with fluent, which wraps interpolated values in
+    // U+2068/U+2069; the MFC dialogs render those as mojibake.
+    let raw = "Could not find '\u{2068}age-plugin-pq\u{2069}' on the PATH.".to_string();
+    assert_eq!(
+        take_message(to_c_string(raw)),
+        "Could not find 'age-plugin-pq' on the PATH."
+    );
+}
+
+#[test]
+fn embedded_null_does_not_panic() {
+    let msg = take_message(to_c_string("bad\0message".to_string()));
+    assert!(msg.contains("null byte"), "{}", msg);
+}
