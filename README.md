@@ -11,6 +11,12 @@ https://user-images.githubusercontent.com/22626146/139507406-08803f91-f7d7-4c15-
 
 Install the MSI on the [releases](https://github.com/spieglt/winage/releases) page.
 
+The installer isn't code signed, so Windows shows "Windows protected your PC" the first time you run it. Select `More info`, then `Run anyway`. The UAC prompt will name an unknown publisher.
+
+Each release carries a build provenance attestation, so you can confirm an installer came from this repository before running it:
+
+    gh attestation verify ageSetup.msi --repo spieglt/winage
+
 # Use
 
 To generate a new identity, right-click the background of an Explorer window and select `Generate new age identity`.
