@@ -5,4 +5,4 @@ Release
 x64
 *.vcxproj.user
 *.aps
-UpgradeLog.htm
+UpgradeLog*.htm
