@@ -1,3 +1,4 @@
+mod callbacks;
 mod error;
 mod identity;
 #[cfg(test)]
@@ -6,10 +7,12 @@ mod tests;
 use age::{
     armor::{ArmoredReader, ArmoredWriter, Format},
     cli_common::{file_io, read_identities, StdinGuard, UiCallbacks},
-    plugin,
+    encrypted, plugin,
     secrecy::SecretString,
     Identity, IdentityFile, Recipient,
 };
+
+use callbacks::WinageCallbacks;
 use rand::{
     distributions::{Distribution, Uniform},
     rngs::OsRng,
@@ -61,13 +64,17 @@ fn catch_ffi(f: impl FnOnce() -> *const c_char) -> *const c_char {
 
 // age's localized errors wrap interpolated values in Unicode bidi isolation
 // marks (U+2068/U+2069), which the MFC dialogs render as mojibake.
-fn to_c_string(s: String) -> *const c_char {
+pub(crate) fn to_cstring(s: &str) -> Option<CString> {
     let cleaned: String = s
         .chars()
         .filter(|c| !matches!(c, '\u{2068}' | '\u{2069}'))
         .collect();
-    CString::new(cleaned)
-        .unwrap_or_else(|_| {
+    CString::new(cleaned).ok()
+}
+
+fn to_c_string(s: String) -> *const c_char {
+    to_cstring(&s)
+        .unwrap_or_else(|| {
             CString::new("Error: message contained a null byte").expect("static string")
         })
         .into_raw()
@@ -229,6 +236,7 @@ fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
         let recipients = read_recipients(
             opts.recipient.clone(),
             opts.recipient_or_identity_file.clone(),
+            opts.max_work_factor,
         )?;
         age::Encryptor::with_recipients(recipients.iter().map(|b| b.as_ref() as &dyn Recipient))?
     };
@@ -278,10 +286,9 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
             .map_err(error::DecryptError::from)
             .and_then(|input| write_output(input, Some(output)))
     } else {
-        let identities = read_identities(
+        let identities = read_identities_with_prompt(
             opts.recipient_or_identity_file.clone(),
             opts.max_work_factor,
-            &mut StdinGuard::new(false),
         )?;
 
         if identities.is_empty() {
@@ -293,6 +300,54 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
             .map_err(error::DecryptError::from)
             .and_then(|input| write_output(input, Some(output)))
     }
+}
+
+/// Reads identity files, handling any that are themselves encrypted to a passphrase.
+///
+/// age's `read_identities` recognises those too, but hands them `UiCallbacks`, which
+/// can only prompt on a terminal. Files it would take care of correctly are left to it.
+fn read_identities_with_prompt(
+    filenames: Vec<String>,
+    max_work_factor: Option<u8>,
+) -> Result<Vec<Box<dyn Identity>>, error::DecryptError> {
+    let mut identities: Vec<Box<dyn Identity>> = vec![];
+    let mut plain = vec![];
+
+    for filename in filenames {
+        match encrypted_identity(&filename, max_work_factor) {
+            Some(identity) => identities.push(Box::new(identity)),
+            None => plain.push(filename),
+        }
+    }
+
+    if !plain.is_empty() {
+        identities.extend(read_identities(
+            plain,
+            max_work_factor,
+            &mut StdinGuard::new(false),
+        )?);
+    }
+
+    Ok(identities)
+}
+
+/// Parses a file as an identity file encrypted to a passphrase, or `None` for anything
+/// else, including a file that cannot be opened — the ordinary reader reports that
+/// better than we would here. Nothing is decrypted yet; the passphrase is requested on
+/// first use.
+fn encrypted_identity(
+    filename: &str,
+    max_work_factor: Option<u8>,
+) -> Option<encrypted::Identity<ArmoredReader<BufReader<File>>, WinageCallbacks>> {
+    let file = File::open(filename).ok()?;
+    encrypted::Identity::from_buffer(
+        ArmoredReader::new(file),
+        Some(filename.to_string()),
+        WinageCallbacks,
+        max_work_factor,
+    )
+    .ok()
+    .flatten()
 }
 
 fn write_output<R: io::Read>(
@@ -311,6 +366,7 @@ fn write_output<R: io::Read>(
 fn read_recipients(
     recipient_strings: Vec<String>,
     file_strings: Vec<String>,
+    max_work_factor: Option<u8>,
 ) -> Result<Vec<Box<dyn Recipient + Send>>, error::EncryptError> {
     let mut recipients: Vec<Box<dyn Recipient + Send>> = vec![];
     let mut plugin_recipients: Vec<plugin::Recipient> = vec![];
@@ -325,6 +381,13 @@ fn read_recipients(
         match read_recipients_list(&arg, buf, &mut recipients, &mut plugin_recipients) {
             Ok(()) => (),
             Err(_e) => { // if we failed to parse as recipients list, try to parse as identity file
+                // Try parsing as an identity file encrypted to a passphrase. This
+                // prompts for it, since the recipients have to be read out now.
+                if let Some(identity) = encrypted_identity(&arg, max_work_factor) {
+                    recipients.extend(identity.recipients()?);
+                    continue;
+                }
+
                 // Try parsing as a single multi-line SSH identity.
                 match age::ssh::Identity::from_buffer(
                     BufReader::new(File::open(&arg)?),

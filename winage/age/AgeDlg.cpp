@@ -9,6 +9,7 @@
 #include "winuser.h"
 #include "ConfirmPassDlg.h"
 #include "GenPassDlg.h"
+#include "IdentityPassDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -63,6 +64,76 @@ static CStringW Utf8ToWide(const char* utf8)
 	MultiByteToWideChar(CP_UTF8, 0, utf8, -1, result.GetBuffer(wideLen), wideLen);
 	result.ReleaseBuffer();
 	return result;
+}
+
+// age asks for these while Rust frames are on the stack, which C++ exceptions must not
+// unwind through.
+
+static void AgeDisplayMessage(const char* message)
+{
+	try {
+		CWnd* main = AfxGetMainWnd();
+		MessageBoxW(main != NULL ? main->GetSafeHwnd() : NULL, Utf8ToWide(message),
+			L"age", MB_OK | MB_ICONINFORMATION);
+	}
+	catch (...) {
+	}
+}
+
+static int AgeConfirm(const char* message, const char* yes, const char* no)
+{
+	try {
+		// A message box can't relabel its buttons, so the choices go in the body.
+		CStringW body = Utf8ToWide(message);
+		if (yes != NULL) {
+			body += L"\n\nYes: ";
+			body += Utf8ToWide(yes);
+		}
+		if (no != NULL) {
+			body += L"\nNo: ";
+			body += Utf8ToWide(no);
+		}
+		CWnd* main = AfxGetMainWnd();
+		int response = MessageBoxW(main != NULL ? main->GetSafeHwnd() : NULL, body,
+			L"age", MB_YESNO | MB_ICONQUESTION);
+		return response == IDYES ? 1 : 0;
+	}
+	catch (...) {
+		return -1;
+	}
+}
+
+static char* AgeRequestPassphrase(const char* description)
+{
+	try {
+		IdentityPassDlg dlg(Utf8ToWide(description));
+		if (dlg.DoModal() != IDOK) {
+			return NULL; // cancelled
+		}
+		return AnsiToUtf8(dlg.passphrase);
+	}
+	catch (...) {
+		return NULL;
+	}
+}
+
+static void AgeFreeString(char* s)
+{
+	if (s != NULL) {
+		SecureZeroMemory(s, strlen(s));
+		free(s);
+	}
+}
+
+void RegisterAgeCallbacks()
+{
+	static const CCallbacks callbacks = {
+		AgeDisplayMessage,
+		AgeConfirm,
+		AgeRequestPassphrase,
+		AgeFreeString,
+	};
+	set_callbacks(&callbacks);
 }
 
 // CAboutDlg dialog used for App About

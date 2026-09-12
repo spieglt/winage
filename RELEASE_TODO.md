@@ -4,7 +4,7 @@ Branch: `age-0.12-upgrade` (3 commits, not yet merged to `main`).
 
 ## Already verified
 
-- `cargo test --release` — 14/14 pass, covering passphrase, armored, identity-file and recipients-list round trips through the real FFI entry points.
+- `cargo test --release` — 20/20 pass, covering passphrase, armored, identity-file, recipients-list and encrypted-identity round trips through the real FFI entry points.
 - `msbuild age.sln /t:age /p:Configuration=Release /p:Platform=x64` — clean, `age.exe` reports FileVersion 2.0.0.0.
 - Installer builds locally and lands at `winage\ageSetup\Release\ageSetup.msi`, the path the workflow expects. ProductVersion 2.0.0, new ProductCode, UpgradeCode unchanged.
 - Upgrade from an installed 1.0 completes with a single Add/Remove Programs entry.
@@ -21,7 +21,7 @@ None of this is reachable from the Rust tests — everything below is C++ or she
 - [ ] Encrypt with the passphrase box left empty, to exercise the generated-passphrase dialog. That block was restructured around a leak and the zeroing.
 - [ ] Encrypt through the UI using an identity file, which now goes through `IdentityFile::to_recipients` rather than the old hand-rolled path.
 - [ ] Drop an `age-plugin-*.exe` next to `age.exe` and use it. This is the actual fix for what Achim16 reported.
-- [ ] Point the identity field at a passphrase-protected identity file and note the exact error. age 0.12 detects these now, so it should fail clearly rather than misparse; worth confirming before the README claims anything.
+- [ ] Encrypt an identity file with a passphrase, then use it as the identity for both an encrypt and a decrypt. The new dialog should name the file it is asking about. Cancelling it should report an error rather than hang.
 
 ## Release mechanics
 
@@ -50,5 +50,5 @@ None of this is reachable from the Rust tests — everything below is C++ or she
 ## Deferred
 
 - Unicode port of the C++ front end. The x64 configs are `CharacterSet=MultiByte`, so paths and passphrases outside the machine's ANSI codepage are `?`-substituted by Windows before winage sees them. Cross-script filenames break; single-locale users are fine.
-- Passphrase-protected identity files. age 0.12 already detects them and the `Callbacks` trait is public, so what is missing is a GUI passphrase prompt to replace `UiCallbacks`, which only talks to a terminal.
+- Plugin text input. `WinageCallbacks::request_public_string` returns None, so a plugin that asks for something other than a passphrase carries on without it. Needs a dialog decision rather than more plumbing.
 - Localization, issue #2.

@@ -311,3 +311,239 @@ fn embedded_null_does_not_panic() {
     let msg = take_message(to_c_string("bad\0message".to_string()));
     assert!(msg.contains("null byte"), "{}", msg);
 }
+
+// Passphrase-protected identity files. These drive the same callback table the MFC
+// front end registers, with the dialogs replaced by canned answers.
+
+use crate::callbacks::{set_callbacks, CCallbacks};
+use std::sync::{Mutex, MutexGuard};
+
+/// The callback table is process-wide, so tests that install their own take turns.
+fn callback_lock() -> MutexGuard<'static, ()> {
+    static LOCK: Mutex<()> = Mutex::new(());
+    LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+static PROMPT_ANSWER: Mutex<Option<String>> = Mutex::new(None);
+static PROMPTS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+static MESSAGES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+extern "C" fn test_request_passphrase(description: *const c_char) -> *mut c_char {
+    let description = unsafe { CStr::from_ptr(description) }
+        .to_string_lossy()
+        .into_owned();
+    PROMPTS.lock().unwrap().push(description);
+
+    match PROMPT_ANSWER.lock().unwrap().clone() {
+        Some(p) => CString::new(p).unwrap().into_raw(),
+        None => ptr::null_mut(), // the user dismissed the dialog
+    }
+}
+
+extern "C" fn test_free_string(s: *mut c_char) {
+    if !s.is_null() {
+        drop(unsafe { CString::from_raw(s) });
+    }
+}
+
+extern "C" fn test_display_message(message: *const c_char) {
+    let message = unsafe { CStr::from_ptr(message) }
+        .to_string_lossy()
+        .into_owned();
+    MESSAGES.lock().unwrap().push(message);
+}
+
+/// Installs callbacks answering every passphrase request with `answer`, or cancelling
+/// when it is `None`.
+fn install_callbacks(answer: Option<&str>) {
+    *PROMPT_ANSWER.lock().unwrap() = answer.map(|s| s.to_string());
+    PROMPTS.lock().unwrap().clear();
+    MESSAGES.lock().unwrap().clear();
+
+    let callbacks = CCallbacks {
+        display_message: Some(test_display_message),
+        confirm: None,
+        request_passphrase: Some(test_request_passphrase),
+        free_string: Some(test_free_string),
+    };
+    unsafe { set_callbacks(&callbacks) };
+}
+
+fn clear_callbacks() {
+    unsafe { set_callbacks(ptr::null()) };
+}
+
+/// Builds an identity file that is itself encrypted to a passphrase, the way a user
+/// would by encrypting their identity with winage.
+fn make_encrypted_identity(name: &str, passphrase: &str) -> PathBuf {
+    let plain = make_identity(&format!("{}-plain", name));
+    let encrypted = scratch(name);
+    let msg = run(&plain, &encrypted, true, Some(passphrase), None, None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+    let _ = fs::remove_file(plain);
+    encrypted
+}
+
+#[test]
+fn encrypted_identity_round_trip() {
+    let _guard = callback_lock();
+    install_callbacks(Some("identity passphrase"));
+
+    let id = make_encrypted_identity("enc-id.age", "identity passphrase");
+    let plain = scratch("enc-id-plain.txt");
+    let enc = scratch("enc-id-plain.txt.age");
+    let dec = scratch("enc-id-plain.out.txt");
+    fs::write(&plain, b"behind a passphrase").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"behind a passphrase");
+
+    // The prompt says which file it is asking about, with age's bidi isolation marks
+    // already stripped.
+    let prompts = PROMPTS.lock().unwrap().clone();
+    assert!(
+        prompts.iter().any(|p| p.contains("enc-id.age")),
+        "{:?}",
+        prompts
+    );
+    assert!(
+        prompts.iter().all(|p| !p.contains('\u{2068}')),
+        "{:?}",
+        prompts
+    );
+
+    clear_callbacks();
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn encrypted_identity_cancelled_prompt_is_an_error() {
+    let _guard = callback_lock();
+    install_callbacks(Some("pw"));
+
+    let id = make_encrypted_identity("cancel-id.age", "pw");
+    let plain = scratch("cancel.txt");
+    let enc = scratch("cancel.txt.age");
+    let dec = scratch("cancel.out.txt");
+    fs::write(&plain, b"x").unwrap();
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    // Dismissing the dialog has to surface as an error, not a hang or a panic.
+    install_callbacks(None);
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    clear_callbacks();
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn encrypted_identity_wrong_passphrase_is_an_error() {
+    let _guard = callback_lock();
+    install_callbacks(Some("right"));
+
+    let id = make_encrypted_identity("wrong-id.age", "right");
+    let plain = scratch("wrongid.txt");
+    let enc = scratch("wrongid.txt.age");
+    let dec = scratch("wrongid.out.txt");
+    fs::write(&plain, b"x").unwrap();
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    install_callbacks(Some("wrong"));
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    clear_callbacks();
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn encrypted_identity_without_callbacks_is_an_error() {
+    let _guard = callback_lock();
+    clear_callbacks();
+
+    let id = make_encrypted_identity("nocb-id.age", "pw");
+    let plain = scratch("nocb.txt");
+    let enc = scratch("nocb.txt.age");
+    fs::write(&plain, b"x").unwrap();
+
+    // Encryption reads the recipients out of the identity file, so with no way to ask
+    // for the passphrase it must fail rather than quietly produce an unreadable file.
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    for p in [id, plain, enc] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn encrypted_identity_that_does_not_match_warns() {
+    let _guard = callback_lock();
+    install_callbacks(Some("pw"));
+
+    let recipient_id = make_identity("mismatch-recipient.txt");
+    let other_id = make_encrypted_identity("mismatch-other.age", "pw");
+    let plain = scratch("mismatch.txt");
+    let enc = scratch("mismatch.txt.age");
+    let dec = scratch("mismatch.out.txt");
+    fs::write(&plain, b"x").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&recipient_id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&other_id), false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    // age warns through display_message that the identity decrypted but matched nothing.
+    let messages = MESSAGES.lock().unwrap().clone();
+    assert!(
+        messages.iter().any(|m| m.contains("didn't match")),
+        "{:?}",
+        messages
+    );
+
+    clear_callbacks();
+    for p in [recipient_id, other_id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn plain_identity_files_still_work_with_callbacks_installed() {
+    let _guard = callback_lock();
+    install_callbacks(Some("unused"));
+
+    let id = make_identity("plain-with-cb.txt");
+    let plain = scratch("plainwithcb.txt");
+    let enc = scratch("plainwithcb.txt.age");
+    let dec = scratch("plainwithcb.out.txt");
+    fs::write(&plain, b"no prompt expected").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"no prompt expected");
+
+    // An unencrypted identity file must not prompt for anything.
+    let prompts = PROMPTS.lock().unwrap().clone();
+    assert!(prompts.is_empty(), "{:?}", prompts);
+
+    clear_callbacks();
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}

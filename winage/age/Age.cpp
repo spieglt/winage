@@ -91,6 +91,8 @@ BOOL CAgeApp::InitInstance()
 		}
 	}
 
+	RegisterAgeCallbacks();
+
 	CAgeDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();

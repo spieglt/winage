@@ -27,6 +27,8 @@ To decrypt an `.age` file, double-click it and specify the passphrase or identit
 
 To encrypt to multiple recipients, specify a text file with one recipient on each line. To encrypt to a single recipient, you can paste it directly.
 
+If your identity file is itself encrypted to a passphrase, winage asks for that passphrase when it opens the file.
+
 # Plugins
 
 age plugins such as `age-plugin-yubikey` and `age-plugin-pq` work with winage. Put the plugin's `.exe` either in a directory on your `PATH` or in the winage install folder next to `age.exe`, then use its recipients and identities as you would native ones.
@@ -41,6 +43,6 @@ Windows hands a program the `PATH` its parent had, so a `PATH` you changed after
 
 # Restrictions
 
-- Does not handle passphrase-protected identity files.
+- File names and typed passphrases are limited to your system's ANSI code page. Characters outside it, such as a Japanese file name on a Western install, are replaced with `?` by Windows before winage sees them.
 
 
