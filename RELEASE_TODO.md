@@ -13,15 +13,19 @@ Branch: `age-0.12-upgrade` (3 commits, not yet merged to `main`).
 
 None of this is reachable from the Rust tests — everything below is C++ or shell integration.
 
-- [ ] Encrypt and decrypt a file whose name contains an umlaut. This is issue #4, and `AnsiToUtf8` has never run outside a compiler.
-- [ ] Double-click a file that is not an age file. Expect the error dialog, then a clean exit.
-- [ ] Double-click a corrupt `.age` file. Same.
-- [ ] Run "Generate new age identity" from the folder background, and separately cancel the save dialog. Both should exit without leaving a window behind.
-- [ ] Confirm the main window closes after a successful encrypt.
-- [ ] Encrypt with the passphrase box left empty, to exercise the generated-passphrase dialog. That block was restructured around a leak and the zeroing.
-- [ ] Encrypt through the UI using an identity file, which now goes through `IdentityFile::to_recipients` rather than the old hand-rolled path.
+- [x] Encrypt and decrypt a file whose name contains an umlaut. This is issue #4, and `AnsiToUtf8` has never run outside a compiler.
+- [x] Rename a text or image file to `.age` and double-click it. Explorer only sends winage what the `.age` association points at, so this is the only way to reach the "exists but is not an age file" branch. It should now report age's own reason rather than a flat "not a valid age file", then exit cleanly.
+- [x] Chop the first few bytes off a real `.age` file and double-click it. Same branch, different reason.
+- [x] Run `age.exe decrypt C:\nope.age` from a terminal. That is the missing-file branch, which nothing in Explorer can reach.
+- [x] Give a file a name with a character outside your code page, a CJK one on CP1252 say, rename it to `.age`, and double-click. It should say Windows replaced a character rather than blaming the file.
+- [x] Run "Generate new age identity" from the folder background, and separately cancel the save dialog. Both should exit without leaving a window behind.
+- [x] Confirm the main window closes after a successful encrypt.
+- [x] Encrypt with the passphrase box left empty, to exercise the generated-passphrase dialog. That block was restructured around a leak and the zeroing.
+- [x] Encrypt through the UI using an identity file, which now goes through `IdentityFile::to_recipients` rather than the old hand-rolled path.
 - [ ] Drop an `age-plugin-*.exe` next to `age.exe` and use it. This is the actual fix for what Achim16 reported.
-- [ ] Encrypt an identity file with a passphrase, then use it as the identity for both an encrypt and a decrypt. The new dialog should name the file it is asking about. Cancelling it should report an error rather than hang.
+- [x] After reinstalling, confirm the install folder holds only `age.exe`. A build before the exclusions shipped copies of `ntdll.dll`, `bcryptprimitives.dll` and `api-ms-win-core-synch-l1-2-0.dll` taken from the build machine, and an existing install still has them on disk.
+- [x] Encrypt an identity file with a passphrase, then use it as the identity for both an encrypt and a decrypt. The new dialog should name the file it is asking about. Cancelling it should report an error rather than hang.
+- [x] Uninstall and confirm it completes without a registry error, that `Directory\Background\shell` keeps its `cmd` and `Powershell` entries, and that winage's two menu items are gone. The currently installed build predates the vdproj fix, so Windows still has the old package cached for uninstall; install a freshly built MSI over it first.
 
 ## Release mechanics
 
@@ -34,7 +38,18 @@ None of this is reachable from the Rust tests — everything below is C++ or she
 ## Communication
 
 - [ ] Post the drafted reply to Achim16 on issue #4.
-- [ ] Write release notes led by RUSTSEC-2024-0433: the shipped 1.0 can execute an arbitrary binary via a malicious plugin name. Then plugins being found next to `age.exe`, non-ASCII paths working, and the installer no longer being signed.
+- [x] Write release notes. Drafted in `RELEASE_NOTES.md`.
+
+## Needs doing in Visual Studio
+
+Neither of these should be hand-edited in the project files; both are a minute in the UI.
+
+- [ ] Add the Windows 10 launch condition. Without it a Windows 7, 8 or 8.1 machine installs cleanly and then fails at launch with "The procedure entry point ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll", which points at nothing useful.
+
+  Do not use `VersionNT`. Windows Installer still reports `VersionNT = 603` and `WindowsBuild = 9600` on Windows 11 — I confirmed that on this machine with an administrative install — so any comparison against 1000 rejects every machine. Detect the registry value instead, which exists only on Windows 10 and later:
+
+  Right-click the `ageSetup` project, View > Launch Conditions. Right-click "Search Target Machine", Add Registry Search, and set `Property` to `WIN10ORLATER`, `Root` to `vsdrrHKLM`, `RegKey` to `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, and `Value` to `CurrentMajorVersionNumber`. Then right-click "Requirements on Target Machine", Add Launch Condition, and set `Condition` to `WIN10ORLATER` and `Message` to "winage requires Windows 10 or later." The condition is just the property being set, since the value is absent before Windows 10.
+- [ ] Open `IDD_IDENTITY_PASS_DIALOG` in the resource editor once so Visual Studio writes its own `DESIGNINFO` entry for it. The dialog was added to `Age.rc` by hand and works, but has no designer metadata yet.
 
 ## Deferred
 

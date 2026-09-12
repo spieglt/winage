@@ -61,6 +61,19 @@ static char* AnsiToUtf8(const char* ansi)
 	return utf8;
 }
 
+// '?' is reserved in Windows filenames, so one in a path is always the ANSI code page
+// standing in for a character it cannot represent. Windows substitutes it before winage
+// sees the string, so there is nothing left to recover, but it is worth naming.
+static BOOL PathWasMangledByCodePage(const char* path)
+{
+	return path != NULL && strchr(path, '?') != NULL;
+}
+
+static const char* CODE_PAGE_MESSAGE =
+	"Windows replaced a character in this path with '?' because your system's code "
+	"page cannot represent it, so the file cannot be opened. Renaming it using "
+	"characters your system supports will work.";
+
 static CStringW Utf8ToWide(const char* utf8)
 {
 	CStringW result;
@@ -254,7 +267,12 @@ BOOL CAgeDlg::OnInitDialog()
 
 		if (__argc > 2) { // second arg should be filename
 			if (!PathFileExists(__argv[2])) {
-				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
+				if (PathWasMangledByCodePage(__argv[2])) {
+					MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
+				}
+				else {
+					MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
+				}
 				EndDialog(IDCANCEL);
 				return TRUE;
 			}
@@ -415,7 +433,12 @@ void CAgeDlg::OnBnClickedButton()
 		goto cleanup;
 	}
 	if (!PathFileExists(inputFile)) {
-		MessageBox("Input path does not point to a valid file.", "Must Select Input File", MB_OK | MB_ICONERROR);
+		if (PathWasMangledByCodePage(inputFile)) {
+			MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
+		}
+		else {
+			MessageBox("Input path does not point to a valid file.", "Must Select Input File", MB_OK | MB_ICONERROR);
+		}
 		goto cleanup;
 	}
 
@@ -560,6 +583,12 @@ void CAgeDlg::OnBnClickedButton()
 		UTF8_CHECK(recipientUtf8);
 		if (PathFileExists(recipient)) {
 			cOptions->recipient_or_identity_file = recipientUtf8;
+		}
+		// A pasted recipient can legitimately hold a '?' in an SSH key comment, so only
+		// a string that also looks like a path gets the code page message.
+		else if (PathWasMangledByCodePage(recipient) && strchr(recipient, '\\') != NULL) {
+			MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
+			goto cleanup;
 		}
 		else {
 			cOptions->recipient = recipientUtf8;
