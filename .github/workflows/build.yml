@@ -8,13 +8,15 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: windows-latest
-    permissions:
-      contents: write # gh release upload
-      id-token: write # provenance signing
-      attestations: write
+    # The project is on the v145 toolset, which VS 2022 does not have, so windows-latest
+    # will not build it. Preview label; fold back into windows-latest once that image
+    # ships Visual Studio 2026.
+    runs-on: windows-2025-vs2026
     steps:
       - uses: actions/checkout@v4
 
@@ -42,16 +44,8 @@ jobs:
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $vsPath = & $vswhere -latest -property installationPath
           $devenv = Join-Path $vsPath "Common7\IDE\devenv.com"
-          & $devenv winage\age.sln /Rebuild "Release|x64" /Project winage\ageSetup\ageSetup.vdproj
+          & $devenv winage\age.sln /Rebuild "Release|x64" /Project winage\ageSetup\AgeSetup.vdproj
           if ($LASTEXITCODE -ne 0) { throw "installer build failed with exit code $LASTEXITCODE" }
-
-      # The installer is not code signed. This ties it to the workflow, commit
-      # and repository that produced it, verifiable with `gh attestation verify`.
-      - name: Attest build provenance
-        if: github.event_name == 'release'
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: winage\ageSetup\Release\ageSetup.msi
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
@@ -60,8 +54,30 @@ jobs:
           path: winage\ageSetup\Release\ageSetup.msi
           if-no-files-found: error
 
+  # Split out so the build itself, which also runs on pull requests, holds no write
+  # permissions.
+  release:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # gh release upload
+      id-token: write # provenance signing
+      attestations: write
+    steps:
+      - name: Download the installer
+        uses: actions/download-artifact@v4
+        with:
+          name: winage-msi
+
+      # The installer is not code signed. This ties it to the workflow, commit
+      # and repository that produced it, verifiable with `gh attestation verify`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ageSetup.msi
+
       - name: Attach installer to release
-        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.event.release.tag_name }} winage\ageSetup\Release\ageSetup.msi --clobber
+        run: gh release upload ${{ github.event.release.tag_name }} ageSetup.msi --clobber

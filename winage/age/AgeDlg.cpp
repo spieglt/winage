@@ -23,6 +23,16 @@
 	} \
 }
 
+// AnsiToUtf8 returns NULL for an unconvertible string as well as for a failed
+// allocation, so it gets its own message rather than MALLOC_CHECK's.
+#define UTF8_CHECK(ptr) { \
+	if (ptr == NULL) { \
+		MessageBox("Could not convert a path or passphrase to UTF-8. It may contain " \
+			"characters outside this system's code page.", "Error", MB_OK | MB_ICONERROR); \
+		goto cleanup; \
+	} \
+}
+
 // The Rust side expects UTF-8; this MBCS build's strings are in the ANSI codepage.
 static char* AnsiToUtf8(const char* ansi)
 {
@@ -254,6 +264,14 @@ BOOL CAgeDlg::OnInitDialog()
 			free(pathUtf8);
 			BOOL isRecipients = mode != NULL && !strcmp(mode, "recipients");
 			BOOL isPassphrase = mode != NULL && !strcmp(mode, "passphrase");
+			// Anything else is the reason the file could not be read, and says more
+			// than "not a valid age file" does.
+			CStringW modeError;
+			if (!isRecipients && !isPassphrase) {
+				modeError = mode != NULL
+					? Utf8ToWide(mode)
+					: CStringW(L"Could not convert the file path to UTF-8.");
+			}
 			free_rust_string(mode);
 			if (isRecipients) {
 				this->CheckDlgButton(RADIO_IDENTITY_RECIPIENT, BST_CHECKED);
@@ -268,7 +286,9 @@ BOOL CAgeDlg::OnInitDialog()
 				this->OnBnClickedPassphrase();
 			}
 			else { // error
-				MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
+				CStringW msg = L"Could not read this age file.\n\n";
+				msg += modeError;
+				MessageBoxW(this->m_hWnd, msg, L"Invalid File", MB_OK | MB_ICONERROR);
 				EndDialog(IDCANCEL);
 				return TRUE;
 			}
@@ -519,12 +539,12 @@ void CAgeDlg::OnBnClickedButton()
 
 	// fill out options for rust, converting strings to UTF-8
 	inputUtf8 = AnsiToUtf8(inputFile);
-	MALLOC_CHECK(inputUtf8);
+	UTF8_CHECK(inputUtf8);
 	outputUtf8 = AnsiToUtf8(output.GetBuffer());
-	MALLOC_CHECK(outputUtf8);
+	UTF8_CHECK(outputUtf8);
 	if (passphrase != NULL) {
 		passphraseUtf8 = AnsiToUtf8(passphrase);
-		MALLOC_CHECK(passphraseUtf8);
+		UTF8_CHECK(passphraseUtf8);
 	}
 	memset(cOptions, 0, sizeof(struct COptions));
 	cOptions->input = inputUtf8;
@@ -537,7 +557,7 @@ void CAgeDlg::OnBnClickedButton()
 
 	if (recipient != NULL && strcmp(recipient, "")) {
 		recipientUtf8 = AnsiToUtf8(recipient);
-		MALLOC_CHECK(recipientUtf8);
+		UTF8_CHECK(recipientUtf8);
 		if (PathFileExists(recipient)) {
 			cOptions->recipient_or_identity_file = recipientUtf8;
 		}

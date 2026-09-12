@@ -8,7 +8,7 @@ use age::{
     armor::{ArmoredReader, ArmoredWriter, Format},
     cli_common::{file_io, read_identities, StdinGuard, UiCallbacks},
     encrypted, plugin,
-    secrecy::SecretString,
+    secrecy::{ExposeSecret, SecretString},
     Identity, IdentityFile, Recipient,
 };
 
@@ -48,7 +48,7 @@ struct AgeOptions {
     input: String,
     encrypt: bool,
     using_passphrase: bool,
-    passphrase: Option<String>,
+    passphrase: Option<SecretString>,
     max_work_factor: Option<u8>,
     armor: bool,
     recipient: Vec<String>,
@@ -85,12 +85,9 @@ pub extern "C" fn wrapper(c_opts: *mut COptions) -> *const c_char {
     if c_opts.is_null() {
         return to_c_string("Error: null options pointer".to_string());
     }
-    let opts: AgeOptions;
-    unsafe {
-        opts = convert(c_opts);
-    }
-
     catch_ffi(move || {
+        let opts = unsafe { convert(c_opts) };
+
         if opts.encrypt {
             match encrypt(&opts) {
                 Ok(()) => to_c_string(format!("Successfully encrypted {}", opts.output)),
@@ -176,11 +173,12 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
         "".to_string()
     };
 
+    // Straight into a SecretString, so the only plaintext copy on this side is the
+    // caller's buffer, which the front end zeroes itself.
     let passphrase = if !(*c_opts).passphrase.is_null() {
-        let p = CStr::from_ptr((*c_opts).passphrase)
-            .to_string_lossy()
-            .into_owned();
-        Some(p)
+        Some(SecretString::new(
+            CStr::from_ptr((*c_opts).passphrase).to_string_lossy().into(),
+        ))
     } else {
         None
     };
@@ -227,7 +225,7 @@ unsafe fn convert(c_opts: *mut COptions) -> AgeOptions {
 fn encrypt(opts: &AgeOptions) -> Result<(), error::EncryptError> {
     let encryptor = if opts.using_passphrase {
         let passphrase = match &opts.passphrase {
-            Some(p) => SecretString::from(p.clone()),
+            Some(p) => SecretString::new(p.expose_secret().into()),
             None => return Err(error::EncryptError::PassphraseMissing),
         };
         age::Encryptor::with_user_passphrase(passphrase)
@@ -274,7 +272,7 @@ fn decrypt(opts: &AgeOptions) -> Result<(), error::DecryptError> {
 
     if decryptor.is_scrypt() {
         let passphrase = match &opts.passphrase {
-            Some(p) => SecretString::from(p.clone()),
+            Some(p) => SecretString::new(p.expose_secret().into()),
             None => return Err(error::DecryptError::MissingPassphrase),
         };
         let mut identity = age::scrypt::Identity::new(passphrase);
@@ -442,13 +440,18 @@ fn read_recipients_list<R: BufRead>(
     recipients: &mut Vec<Box<dyn Recipient + Send>>,
     plugin_recipients: &mut Vec<plugin::Recipient>,
 ) -> io::Result<()> {
+    // Parse into scratch vectors and only merge on success, so a file that turns out
+    // to be an identity file leaves nothing behind for the fallback to duplicate.
+    let mut new_recipients = vec![];
+    let mut new_plugin_recipients = vec![];
+
     for (line_number, line) in buf.lines().enumerate() {
         let line = line?;
 
         // Skip empty lines and comments
         if line.is_empty() || line.find('#') == Some(0) {
             continue;
-        } else if parse_recipient(line, recipients, plugin_recipients).is_err() {
+        } else if parse_recipient(line, &mut new_recipients, &mut new_plugin_recipients).is_err() {
             // Return a line number in place of the line, so we don't leak the file
             // contents in error messages.
             return Err(io::Error::new(
@@ -461,6 +464,9 @@ fn read_recipients_list<R: BufRead>(
             ));
         }
     }
+
+    recipients.append(&mut new_recipients);
+    plugin_recipients.append(&mut new_plugin_recipients);
 
     Ok(())
 }
