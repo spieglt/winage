@@ -46,10 +46,10 @@ Then the rest of the UI, all of which moved:
 
 ## Release mechanics
 
-- [ ] Open the PR to `main`. The workflow's push trigger is `main` only, so this branch has never run CI even once.
-- [ ] Watch the installer step on the runner. First CI run got through checkout, the Rust tests and the MFC build on `windows-2025-vs2026` — the image has Visual Studio 2026 Enterprise 18.9.2, MSVC 14.51.36231 and ATLMFC, so the label and toolset are right — then failed in devenv with "The parameter is incorrect." That was argument parsing: `/Project` was given a path relative to the working directory, and the solution records the project as the name `ageSetup` under `winage\`. Fixed.
+- [x] Open the PR to `main`.
+- [x] Get the build job green. `windows-2025-vs2026` carries Visual Studio 2026 Enterprise 18.9.2, MSVC 14.51.36231, ATLMFC, and — the question that had been open since the workflow was written — the Visual Studio Installer Projects extension. The MSI builds on the runner, so WiX stays unnecessary.
 
-  Still unknown after that fix: whether the runner has the Visual Studio Installer Projects extension at all. devenv rejected the arguments before it ever tried to load the `.vdproj`, so that question has not been answered yet. If the next run fails inside the project load, WiX v3.14 is already on the runner's PATH and is the fallback.
+  The one failure along the way was devenv's arguments: `/Project` had been given a path relative to the working directory, where the solution records the project as the name `ageSetup` under `winage\`. The step now also captures `devenv.log` and prints it, since devenv reports almost nothing on stdout.
 - [ ] Publish the GitHub release and let the workflow build and upload the MSI. Attaching the local one by hand breaks the attestation, which is generated against the artifact the workflow produced.
 - [ ] Run `gh attestation verify ageSetup.msi --repo spieglt/winage` against the published asset. The README tells users to, and the command has never been run against a real release.
 - [ ] Delete the `SIGN_CERT_BASE64` secret and its password from repo settings if they were ever added. Nothing reads them since signing was dropped.
@@ -63,12 +63,12 @@ Then the rest of the UI, all of which moved:
 
 Neither of these should be hand-edited in the project files; both are a minute in the UI.
 
-- [ ] Add the Windows 10 launch condition. Without it a Windows 7, 8 or 8.1 machine installs cleanly and then fails at launch with "The procedure entry point ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll", which points at nothing useful.
+- [x] Add the Windows 10 launch condition. Without it a Windows 7, 8 or 8.1 machine installs cleanly and then fails at launch with "The procedure entry point ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll", which points at nothing useful.
 
   Do not use `VersionNT`. Windows Installer still reports `VersionNT = 603` and `WindowsBuild = 9600` on Windows 11 — I confirmed that on this machine with an administrative install — so any comparison against 1000 rejects every machine. Detect the registry value instead, which exists only on Windows 10 and later:
 
   Right-click the `ageSetup` project, View > Launch Conditions. Right-click "Search Target Machine", Add Registry Search, and set `Property` to `WIN10ORLATER`, `Root` to `vsdrrHKLM`, `RegKey` to `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, and `Value` to `CurrentMajorVersionNumber`. Then right-click "Requirements on Target Machine", Add Launch Condition, and set `Condition` to `WIN10ORLATER` and `Message` to "winage requires Windows 10 or later." The condition is just the property being set, since the value is absent before Windows 10.
-- [ ] Open `IDD_IDENTITY_PASS_DIALOG` in the resource editor once so Visual Studio writes its own `DESIGNINFO` entry for it. The dialog was added to `Age.rc` by hand and works, but has no designer metadata yet.
+- [x] Open `IDD_IDENTITY_PASS_DIALOG` in the resource editor once so Visual Studio writes its own `DESIGNINFO` entry for it. The dialog was added to `Age.rc` by hand and works, but has no designer metadata yet.
 
 ## Deferred
 

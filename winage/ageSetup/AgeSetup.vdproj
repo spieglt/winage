@@ -406,9 +406,24 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_575DEC4A596D405DA4998C3E817815D8"
+            {
+            "Name" = "8:Windows 10 or later"
+            "Condition" = "8:WIN10ORLATER"
+            "Message" = "8:winage requires Windows 10 or later."
+            "InstallUrl" = "8:"
+            }
         }
         "Locator"
         {
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_A0E42EE3A5F04DF29D295CC5C585E952"
+            {
+            "Name" = "8:Windows 10 or later"
+            "Root" = "2:1"
+            "RegKey" = "8:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+            "Value" = "8:CurrentMajorVersionNumber"
+            "Property" = "8:WIN10ORLATER"
+            }
         }
         "MsiBootstrapper"
         {
@@ -420,7 +435,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:age file encryption"
         "ProductCode" = "8:{47CD4170-6758-42F3-B602-8EAF9AD8FC3B}"
-        "PackageCode" = "8:{A017C03B-0518-497E-AAA1-1626766BAAF6}"
+        "PackageCode" = "8:{16F077B5-A985-4CFD-99CB-CE72DC249AF7}"
         "UpgradeCode" = "8:{B4B77189-236F-416E-A750-10D67E34D847}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
