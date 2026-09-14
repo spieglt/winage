@@ -42,12 +42,14 @@ Then the rest of the UI, all of which moved:
 - [x] Check the About box renders its text intact, since that string literal moved to `_T()`.
 - [ ] Drop an `age-plugin-*.exe` next to `age.exe` and use it. This is the actual fix for what Achim16 reported, and is the one item the port did not touch.
 - [x] After reinstalling, confirm the install folder holds only `age.exe`.
-- [ ] Uninstall and confirm it completes without a registry error, that `Directory\Background\shell` keeps its `cmd` and `Powershell` entries, and that winage's two menu items are gone.
+- [x] Uninstall and confirm it completes without a registry error, that `Directory\Background\shell` keeps its `cmd` and `Powershell` entries, and that winage's two menu items are gone.
 
 ## Release mechanics
 
 - [ ] Open the PR to `main`. The workflow's push trigger is `main` only, so this branch has never run CI even once.
-- [ ] Watch the installer step on the runner. It needs the Visual Studio Installer Projects extension, which GitHub runners do not preinstall, and devenv hung locally on what looked like a first-run dialog. WiX is the fallback if it fails. The build job runs on `windows-2025-vs2026`, a preview label, since the project needs v145 and `windows-latest` is still on Visual Studio 2022.
+- [ ] Watch the installer step on the runner. First CI run got through checkout, the Rust tests and the MFC build on `windows-2025-vs2026` — the image has Visual Studio 2026 Enterprise 18.9.2, MSVC 14.51.36231 and ATLMFC, so the label and toolset are right — then failed in devenv with "The parameter is incorrect." That was argument parsing: `/Project` was given a path relative to the working directory, and the solution records the project as the name `ageSetup` under `winage\`. Fixed.
+
+  Still unknown after that fix: whether the runner has the Visual Studio Installer Projects extension at all. devenv rejected the arguments before it ever tried to load the `.vdproj`, so that question has not been answered yet. If the next run fails inside the project load, WiX v3.14 is already on the runner's PATH and is the fallback.
 - [ ] Publish the GitHub release and let the workflow build and upload the MSI. Attaching the local one by hand breaks the attestation, which is generated against the artifact the workflow produced.
 - [ ] Run `gh attestation verify ageSetup.msi --repo spieglt/winage` against the published asset. The README tells users to, and the command has never been run against a real release.
 - [ ] Delete the `SIGN_CERT_BASE64` secret and its password from repo settings if they were ever added. Nothing reads them since signing was dropped.

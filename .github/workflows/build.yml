@@ -37,15 +37,20 @@ jobs:
       - name: Build MFC front end
         run: msbuild winage\age.sln /t:age /p:Configuration=Release /p:Platform=x64 /v:minimal
 
-      # Requires the "Microsoft Visual Studio Installer Projects" extension;
-      # devenv is the only thing that can build a .vdproj.
+      # Requires the "Microsoft Visual Studio Installer Projects" extension; devenv is
+      # the only thing that can build a .vdproj. /Project wants the project as the
+      # solution names it, not a path from the working directory, and age.exe is already
+      # built by the step above, so /Build rather than /Rebuild.
       - name: Build MSI installer
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $vsPath = & $vswhere -latest -property installationPath
           $devenv = Join-Path $vsPath "Common7\IDE\devenv.com"
-          & $devenv winage\age.sln /Rebuild "Release|x64" /Project winage\ageSetup\AgeSetup.vdproj
-          if ($LASTEXITCODE -ne 0) { throw "installer build failed with exit code $LASTEXITCODE" }
+          & $devenv winage\age.sln /Build "Release|x64" /Project ageSetup /Out devenv.log
+          $code = $LASTEXITCODE
+          # devenv says almost nothing on stdout; the log is the only diagnosis there is.
+          if (Test-Path devenv.log) { Get-Content devenv.log }
+          if ($code -ne 0) { throw "installer build failed with exit code $code" }
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
