@@ -31,6 +31,15 @@ public:
 
 extern CAgeApp theApp;
 
+// MFC enters through wWinMain in a Unicode build, so the CRT fills in __wargv. Guard
+// anyway and hand back an empty string rather than null: everything winage does with
+// argv arrives from the shell integration, so a null here would break the common path
+// instead of failing visibly.
+inline LPCWSTR CommandLineArg(int index)
+{
+	return (__wargv != NULL && index >= 0 && index < __argc) ? __wargv[index] : L"";
+}
+
 inline BOOL IsEditOrEditBrowse(CWnd* pWnd)
 {
 	if (!pWnd) return FALSE;
@@ -38,9 +47,9 @@ inline BOOL IsEditOrEditBrowse(CWnd* pWnd)
 	if (hWnd == NULL)
 		return FALSE;
 
-	const char* editName = "Edit";
-	const char* ebcName = "MFCEditBrowse";
-	char className[14];
+	LPCTSTR editName = _T("Edit");
+	LPCTSTR ebcName = _T("MFCEditBrowse");
+	TCHAR className[14];
 	return ::GetClassName(hWnd, className, 14) &&
 		(!_tcsicmp(className, editName) || !_tcsicmp(className, ebcName));
 }

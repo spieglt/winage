@@ -8,6 +8,10 @@ winage 1.0 shipped age 0.6.0, which is affected by RUSTSEC-2024-0433. A recipien
 
 age plugins such as `age-plugin-yubikey` and `age-plugin-pq` can be used for both recipients and identities. Put the plugin's `.exe` on your `PATH` or in the winage install folder next to `age.exe`, which is the simpler option because Windows hands a program the `PATH` its parent had (#4).
 
+## File names in any language
+
+The front end is a Unicode build now. File names, folder names and typed passphrases can use any characters Windows can store, in any mix of scripts, regardless of what your system locale is set to. Previously anything outside your system's code page was replaced with `?` before winage saw it, so a Japanese file name on a Western install could not be opened (#4). A passphrase typed outside the code page was worse, because it was silently altered and produced a file that the real age CLI would not open.
+
 ## Passphrase-protected identity files
 
 An identity file that is itself encrypted to a passphrase now works. winage asks for the passphrase when it opens the file.

@@ -22,7 +22,7 @@ IdentityPassDlg::IdentityPassDlg(const CStringW& description, CWnd* pParent /*=n
 IdentityPassDlg::~IdentityPassDlg()
 {
 	if (!passphrase.IsEmpty()) {
-		SecureZeroMemory(passphrase.GetBuffer(), passphrase.GetLength());
+		SecureZeroMemory(passphrase.GetBuffer(), passphrase.GetLength() * sizeof(TCHAR));
 		passphrase.ReleaseBuffer(0);
 	}
 }

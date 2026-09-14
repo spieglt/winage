@@ -18,61 +18,41 @@
 
 #define MALLOC_CHECK(ptr) { \
 	if (ptr == NULL) { \
-		MessageBox("Memory allocation error, aborting.", "Error", MB_OK | MB_ICONERROR); \
+		MessageBox(_T("Memory allocation error, aborting."), _T("Error"), MB_OK | MB_ICONERROR); \
 		goto cleanup; \
 	} \
 }
 
-// AnsiToUtf8 returns NULL for an unconvertible string as well as for a failed
-// allocation, so it gets its own message rather than MALLOC_CHECK's.
+// WideToUtf8 returns NULL only on a failed allocation or an unconvertible string, so it
+// gets its own message rather than MALLOC_CHECK's.
 #define UTF8_CHECK(ptr) { \
 	if (ptr == NULL) { \
-		MessageBox("Could not convert a path or passphrase to UTF-8. It may contain " \
-			"characters outside this system's code page.", "Error", MB_OK | MB_ICONERROR); \
+		MessageBox(_T("Could not convert a path or passphrase to UTF-8."), \
+			_T("Error"), MB_OK | MB_ICONERROR); \
 		goto cleanup; \
 	} \
 }
 
-// The Rust side expects UTF-8; this MBCS build's strings are in the ANSI codepage.
-static char* AnsiToUtf8(const char* ansi)
+// The Rust side takes UTF-8. This is a Unicode build, so the front end holds UTF-16 and
+// the conversion is lossless in both directions for every path Windows can name.
+static char* WideToUtf8(const wchar_t* wide)
 {
-	if (ansi == NULL) {
-		return NULL;
-	}
-	int wideLen = MultiByteToWideChar(CP_ACP, 0, ansi, -1, NULL, 0);
-	if (wideLen <= 0) {
-		return NULL;
-	}
-	wchar_t* wide = (wchar_t*)malloc(wideLen * sizeof(wchar_t));
 	if (wide == NULL) {
 		return NULL;
 	}
-	MultiByteToWideChar(CP_ACP, 0, ansi, -1, wide, wideLen);
-	char* utf8 = NULL;
+	// No WC_ERR_INVALID_CHARS: a lone surrogate in a filename is legal on NTFS and
+	// should become U+FFFD rather than fail the whole operation.
 	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wide, -1, NULL, 0, NULL, NULL);
-	if (utf8Len > 0) {
-		utf8 = (char*)malloc(utf8Len);
-		if (utf8 != NULL) {
-			WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Len, NULL, NULL);
-		}
+	if (utf8Len <= 0) {
+		return NULL;
 	}
-	SecureZeroMemory(wide, wideLen * sizeof(wchar_t)); // may hold a passphrase
-	free(wide);
+	char* utf8 = (char*)malloc(utf8Len);
+	if (utf8 == NULL) {
+		return NULL;
+	}
+	WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Len, NULL, NULL);
 	return utf8;
 }
-
-// '?' is reserved in Windows filenames, so one in a path is always the ANSI code page
-// standing in for a character it cannot represent. Windows substitutes it before winage
-// sees the string, so there is nothing left to recover, but it is worth naming.
-static BOOL PathWasMangledByCodePage(const char* path)
-{
-	return path != NULL && strchr(path, '?') != NULL;
-}
-
-static const char* CODE_PAGE_MESSAGE =
-	"Windows replaced a character in this path with '?' because your system's code "
-	"page cannot represent it, so the file cannot be opened. Renaming it using "
-	"characters your system supports will work.";
 
 static CStringW Utf8ToWide(const char* utf8)
 {
@@ -133,7 +113,7 @@ static char* AgeRequestPassphrase(const char* description)
 		if (dlg.DoModal() != IDOK) {
 			return NULL; // cancelled
 		}
-		return AnsiToUtf8(dlg.passphrase);
+		return WideToUtf8(dlg.passphrase);
 	}
 	catch (...) {
 		return NULL;
@@ -253,31 +233,26 @@ BOOL CAgeDlg::OnInitDialog()
 	// Add extra initialization here
 	this->CheckDlgButton(RADIO_PASSPHRASE, BST_CHECKED);
 	if (__argc > 2) {
-		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowText(__argv[2]);
+		this->GetDlgItem(INPUT_FILE_SELECTOR)->SetWindowText(CommandLineArg(2));
 	}
-	if (__argc > 1 && !strcmp(__argv[1], "decrypt")) {
-		this->SetWindowText("age - Decrypt file");
-		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowText("Select file to decrypt");
-		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowText("Decrypt");
-		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowText("Enter passphrase");
+	if (__argc > 1 && !wcscmp(CommandLineArg(1), L"decrypt")) {
+		this->SetWindowText(_T("age - Decrypt file"));
+		this->GetDlgItem(ENCRYPT_LABEL)->SetWindowText(_T("Select file to decrypt"));
+		this->GetDlgItem(ENCRYPT_BUTTON)->SetWindowText(_T("Decrypt"));
+		this->GetDlgItem(PASSPHRASE_LABEL)->SetWindowText(_T("Enter passphrase"));
 		this->GetDlgItem(INPUT_FILE_SELECTOR)->EnableWindow(false);
 		this->GetDlgItem(IDC_ARMOR)->ShowWindow(false);
-		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowText("Select identity file");
-		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowText("Identity");
+		this->GetDlgItem(RECIPIENT_LABEL)->SetWindowText(_T("Select identity file"));
+		this->GetDlgItem(RADIO_IDENTITY_RECIPIENT)->SetWindowText(_T("Identity"));
 
 		if (__argc > 2) { // second arg should be filename
-			if (!PathFileExists(__argv[2])) {
-				if (PathWasMangledByCodePage(__argv[2])) {
-					MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
-				}
-				else {
-					MessageBox("Not a valid age file. Exiting.", "Invalid File", MB_OK | MB_ICONERROR);
-				}
+			if (!PathFileExists(CommandLineArg(2))) {
+				MessageBox(_T("Not a valid age file. Exiting."), _T("Invalid File"), MB_OK | MB_ICONERROR);
 				EndDialog(IDCANCEL);
 				return TRUE;
 			}
 			// detect and handle authentication mode
-			char* pathUtf8 = AnsiToUtf8(__argv[2]);
+			char* pathUtf8 = WideToUtf8(CommandLineArg(2));
 			char* mode = pathUtf8 != NULL ? get_decryption_mode(pathUtf8) : NULL;
 			free(pathUtf8);
 			BOOL isRecipients = mode != NULL && !strcmp(mode, "recipients");
@@ -290,6 +265,7 @@ BOOL CAgeDlg::OnInitDialog()
 					? Utf8ToWide(mode)
 					: CStringW(L"Could not convert the file path to UTF-8.");
 			}
+
 			free_rust_string(mode);
 			if (isRecipients) {
 				this->CheckDlgButton(RADIO_IDENTITY_RECIPIENT, BST_CHECKED);
@@ -304,21 +280,21 @@ BOOL CAgeDlg::OnInitDialog()
 				this->OnBnClickedPassphrase();
 			}
 			else { // error
-				CStringW msg = L"Could not read this age file.\n\n";
+				CString msg = _T("Could not read this age file.\n\n");
 				msg += modeError;
-				MessageBoxW(this->m_hWnd, msg, L"Invalid File", MB_OK | MB_ICONERROR);
+				MessageBox(msg, _T("Invalid File"), MB_OK | MB_ICONERROR);
 				EndDialog(IDCANCEL);
 				return TRUE;
 			}
 		}
 	}
-	if (__argc > 1 && !strcmp(__argv[1], "generate")) {
+	if (__argc > 1 && !wcscmp(CommandLineArg(1), L"generate")) {
 		CFileDialog outputDiag(
 			FALSE,
-			"txt",
-			"age-identity",
+			_T("txt"),
+			_T("age-identity"),
 			OFN_OVERWRITEPROMPT,
-			"Text files|*.txt||",
+			_T("Text files|*.txt||"),
 			NULL,
 			0,
 			TRUE
@@ -326,19 +302,19 @@ BOOL CAgeDlg::OnInitDialog()
 		INT_PTR outputRes = outputDiag.DoModal();
 		if (outputRes == IDOK) {
 			CString output = outputDiag.GetPathName();
-			if (strcmp(output.GetBuffer(), "")) {
-				char* outputUtf8 = AnsiToUtf8(output.GetBuffer());
+			if (!output.IsEmpty()) {
+				char* outputUtf8 = WideToUtf8(output);
 				char* retMessage = outputUtf8 != NULL ? generate_identity(outputUtf8) : NULL;
 				free(outputUtf8);
 				if (retMessage != NULL && !strcmp(retMessage, "ok")) {
-					CString msg = "Identity file successfully created at: ";
+					CString msg = _T("Identity file successfully created at: ");
 					msg += output;
-					MessageBox(msg, "Identity created", MB_OK | MB_ICONINFORMATION);
+					MessageBox(msg, _T("Identity created"), MB_OK | MB_ICONINFORMATION);
 				}
 				else {
-					CStringW msg = L"Error generating identity file: ";
+					CString msg = _T("Error generating identity file: ");
 					msg += Utf8ToWide(retMessage);
-					MessageBoxW(this->m_hWnd, msg, L"Error", MB_OK | MB_ICONERROR);
+					MessageBox(msg, _T("Error"), MB_OK | MB_ICONERROR);
 				}
 				free_rust_string(retMessage);
 			}
@@ -413,71 +389,67 @@ void CAgeDlg::OnBnClickedButton()
 	char* recipientUtf8 = NULL;
 	CFileDialog* outputDiag = NULL;
 	CString output;
-	char* outputName = NULL;
-	CString rustMessage = "";
+	LPTSTR outputName = NULL;
+	CString rustMessage;
 	struct COptions* cOptions = (struct COptions*)malloc(sizeof(struct COptions));
 	MALLOC_CHECK(cOptions);
 
-	BOOL encrypting = !(__argc > 1 && !(strcmp(__argv[1], "decrypt")));
+	BOOL encrypting = !(__argc > 1 && !(wcscmp(CommandLineArg(1), L"decrypt")));
 	BOOL usingPassphrase = this->IsDlgButtonChecked(RADIO_PASSPHRASE);
 	BOOL armor = this->IsDlgButtonChecked(IDC_ARMOR);
 
-	// get and verify input filepath
+	// get and verify input filepath. Every size below this point counts characters, not
+	// bytes; only the mallocs scale by sizeof(TCHAR).
 	int pathSize = this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowTextLength() + 1;
 	size_t bigSize = pathSize;
-	inputFile = (LPTSTR)malloc(pathSize);
+	inputFile = (LPTSTR)malloc(pathSize * sizeof(TCHAR));
 	MALLOC_CHECK(inputFile);
 	this->GetDlgItem(INPUT_FILE_SELECTOR)->GetWindowText(inputFile, pathSize);
-	if (!strcmp(inputFile, "")) {
-		MessageBox("Must select file to encrypt or decrypt.", "No Input File Selected", MB_OK | MB_ICONERROR);
+	if (inputFile[0] == _T('\0')) {
+		MessageBox(_T("Must select file to encrypt or decrypt."), _T("No Input File Selected"), MB_OK | MB_ICONERROR);
 		goto cleanup;
 	}
 	if (!PathFileExists(inputFile)) {
-		if (PathWasMangledByCodePage(inputFile)) {
-			MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
-		}
-		else {
-			MessageBox("Input path does not point to a valid file.", "Must Select Input File", MB_OK | MB_ICONERROR);
-		}
+		MessageBox(_T("Input path does not point to a valid file."), _T("Must Select Input File"), MB_OK | MB_ICONERROR);
 		goto cleanup;
 	}
 
 	// make default output filename
 	if (encrypting) { // add ".age" extension
-		outputName = (char*)malloc(bigSize + 4);
+		outputName = (LPTSTR)malloc((bigSize + 4) * sizeof(TCHAR));
 		MALLOC_CHECK(outputName);
-		strcpy_s(outputName, bigSize + 4, inputFile);
-		strcat_s(outputName, bigSize + 4, ".age");
+		_tcscpy_s(outputName, bigSize + 4, inputFile);
+		_tcscat_s(outputName, bigSize + 4, _T(".age"));
 	} else { // chop ".age" extension if present
 		// when counting backwards from end of string, must account for null byte;
 		// the length check has to come first or the offset underflows
-		if (bigSize > 5 && !strcmp(inputFile + (bigSize - 5), ".age")) {
-			outputName = (char*)malloc(bigSize);
+		if (bigSize > 5 && !_tcscmp(inputFile + (bigSize - 5), _T(".age"))) {
+			outputName = (LPTSTR)malloc(bigSize * sizeof(TCHAR));
 			MALLOC_CHECK(outputName);
-			strncpy_s(outputName, bigSize, inputFile, bigSize - 5);
+			_tcsncpy_s(outputName, bigSize, inputFile, bigSize - 5);
 		} else {
-			char* decrypted = ".decrypted";
-			size_t decryptedLen = strlen(decrypted);
-			outputName = (char*)malloc(bigSize + decryptedLen);
+			LPCTSTR decrypted = _T(".decrypted");
+			size_t decryptedLen = _tcslen(decrypted);
+			outputName = (LPTSTR)malloc((bigSize + decryptedLen) * sizeof(TCHAR));
 			MALLOC_CHECK(outputName);
-			strcpy_s(outputName, bigSize + decryptedLen, inputFile);
-			strcat_s(outputName, bigSize + decryptedLen, decrypted);
+			_tcscpy_s(outputName, bigSize + decryptedLen, inputFile);
+			_tcscat_s(outputName, bigSize + decryptedLen, decrypted);
 		}
 	}
 
 	// handle auth mode
 	if (this->IsDlgButtonChecked(RADIO_IDENTITY_RECIPIENT)) {
 		pathSize = this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowTextLength() + 1;
-		recipient = (LPTSTR)malloc(pathSize);
+		recipient = (LPTSTR)malloc(pathSize * sizeof(TCHAR));
 		MALLOC_CHECK(recipient);
 		this->GetDlgItem(RECIPIENT_FILE_SELECTOR)->GetWindowText(recipient, pathSize);
 
-		if (!strcmp(recipient, "")) {
+		if (recipient[0] == _T('\0')) {
 			if (encrypting) {
-				MessageBox("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities.", "Missing Identity/Recipent", MB_OK | MB_ICONERROR);
+				MessageBox(_T("Must paste a recipient's public key, specify a recipients file, or select file containing one or more identities."), _T("Missing Identity/Recipent"), MB_OK | MB_ICONERROR);
 			}
 			else {
-				MessageBox("Must select a file containing one or more identities.", "Missing Identity", MB_OK | MB_ICONERROR);
+				MessageBox(_T("Must select a file containing one or more identities."), _T("Missing Identity"), MB_OK | MB_ICONERROR);
 			}
 			goto cleanup;
 		}
@@ -487,13 +459,17 @@ void CAgeDlg::OnBnClickedButton()
 		if (pathSize == 1 && encrypting) { // empty string, get generated password from rust
 			char* generated = get_passphrase();
 			if (generated == NULL) {
-				MessageBox("Could not generate a passphrase.", "Error", MB_OK | MB_ICONERROR);
+				MessageBox(_T("Could not generate a passphrase."), _T("Error"), MB_OK | MB_ICONERROR);
 				goto cleanup;
 			}
+			// The wordlist is ASCII, so the UTF-8 length bounds the UTF-16 length.
 			size_t generatedSize = strlen(generated) + 1;
-			passphrase = (LPTSTR)malloc(generatedSize);
+			passphrase = (LPTSTR)malloc(generatedSize * sizeof(TCHAR));
 			if (passphrase != NULL) {
-				strcpy_s(passphrase, generatedSize, generated);
+				CStringW wide = Utf8ToWide(generated);
+				_tcscpy_s(passphrase, generatedSize, wide);
+				SecureZeroMemory(wide.GetBuffer(), wide.GetLength() * sizeof(TCHAR));
+				wide.ReleaseBuffer(0);
 			}
 			free_rust_string(generated); // zeroes the passphrase
 			MALLOC_CHECK(passphrase);
@@ -501,7 +477,7 @@ void CAgeDlg::OnBnClickedButton()
 			gpd.DoModal();
 		}
 		else {
-			passphrase = (LPTSTR)malloc(pathSize);
+			passphrase = (LPTSTR)malloc(pathSize * sizeof(TCHAR));
 			MALLOC_CHECK(passphrase);
 			this->GetDlgItem(PASSPHRASE_BOX)->GetWindowText(passphrase, pathSize);
 			if (encrypting) { // confirm password
@@ -509,18 +485,19 @@ void CAgeDlg::OnBnClickedButton()
 				if (confirmDlg.DoModal() != IDOK) {
 					goto cleanup;
 				}
-				BOOL matched = !strcmp(passphrase, confirmDlg.confirmedPass.GetBuffer());
-				SecureZeroMemory(confirmDlg.confirmedPass.GetBuffer(), confirmDlg.confirmedPass.GetLength());
+				BOOL matched = !_tcscmp(passphrase, confirmDlg.confirmedPass);
+				SecureZeroMemory(confirmDlg.confirmedPass.GetBuffer(),
+					confirmDlg.confirmedPass.GetLength() * sizeof(TCHAR));
 				confirmDlg.confirmedPass.ReleaseBuffer(0);
 				if (!matched) {
-					MessageBox("Passphrases do not match.", "Mismatched Passphrase", MB_OK | MB_ICONERROR);
+					MessageBox(_T("Passphrases do not match."), _T("Mismatched Passphrase"), MB_OK | MB_ICONERROR);
 					goto cleanup;
 				}
 			}
 		}
 
-		if (!encrypting && (passphrase == NULL || !strcmp(passphrase, ""))) {
-			MessageBox("Must provide decryption passphrase.", "Missing Passphrase", MB_OK | MB_ICONERROR);
+		if (!encrypting && (passphrase == NULL || passphrase[0] == _T('\0'))) {
+			MessageBox(_T("Must provide decryption passphrase."), _T("Missing Passphrase"), MB_OK | MB_ICONERROR);
 			goto cleanup;
 		}
 	}
@@ -540,10 +517,10 @@ void CAgeDlg::OnBnClickedButton()
 	} else {
 		outputDiag = new CFileDialog(
 			false,
-			"age",
+			_T("age"),
 			outputName,
 			OFN_OVERWRITEPROMPT,
-			"age files|*.age||",
+			_T("age files|*.age||"),
 			NULL,
 			0,
 			TRUE
@@ -552,7 +529,7 @@ void CAgeDlg::OnBnClickedButton()
 	INT_PTR outputRes = outputDiag->DoModal();
 	if (outputRes == IDOK) {
 		output = outputDiag->GetPathName();
-		if (!strcmp(output, "")) {
+		if (output.IsEmpty()) {
 			goto cleanup;
 		}
 	}
@@ -561,12 +538,12 @@ void CAgeDlg::OnBnClickedButton()
 	}
 
 	// fill out options for rust, converting strings to UTF-8
-	inputUtf8 = AnsiToUtf8(inputFile);
+	inputUtf8 = WideToUtf8(inputFile);
 	UTF8_CHECK(inputUtf8);
-	outputUtf8 = AnsiToUtf8(output.GetBuffer());
+	outputUtf8 = WideToUtf8(output);
 	UTF8_CHECK(outputUtf8);
 	if (passphrase != NULL) {
-		passphraseUtf8 = AnsiToUtf8(passphrase);
+		passphraseUtf8 = WideToUtf8(passphrase);
 		UTF8_CHECK(passphraseUtf8);
 	}
 	memset(cOptions, 0, sizeof(struct COptions));
@@ -578,17 +555,11 @@ void CAgeDlg::OnBnClickedButton()
 	cOptions->armor = armor;
 	cOptions->output = outputUtf8;
 
-	if (recipient != NULL && strcmp(recipient, "")) {
-		recipientUtf8 = AnsiToUtf8(recipient);
+	if (recipient != NULL && recipient[0] != _T('\0')) {
+		recipientUtf8 = WideToUtf8(recipient);
 		UTF8_CHECK(recipientUtf8);
 		if (PathFileExists(recipient)) {
 			cOptions->recipient_or_identity_file = recipientUtf8;
-		}
-		// A pasted recipient can legitimately hold a '?' in an SSH key comment, so only
-		// a string that also looks like a path gets the code page message.
-		else if (PathWasMangledByCodePage(recipient) && strchr(recipient, '\\') != NULL) {
-			MessageBox(CODE_PAGE_MESSAGE, "Unsupported Characters", MB_OK | MB_ICONERROR);
-			goto cleanup;
 		}
 		else {
 			cOptions->recipient = recipientUtf8;
@@ -597,27 +568,27 @@ void CAgeDlg::OnBnClickedButton()
 
 	// change window title to indicate we're busy
 	if (encrypting) {
-		this->SetWindowText("age - Encrypting...");
+		this->SetWindowText(_T("age - Encrypting..."));
 	} else {
-		this->SetWindowText("age - Decrypting...");
+		this->SetWindowText(_T("age - Decrypting..."));
 	}
 
 	// call main rust routine
 	char* res = wrapper(cOptions);
-	rustMessage = res;
-	MessageBoxW(this->m_hWnd, Utf8ToWide(res), L"Message", MB_OK);
+	rustMessage = Utf8ToWide(res);
+	MessageBox(rustMessage, _T("Message"), MB_OK);
 	free_rust_string(res);
 
 	// change title back
 	if (encrypting) {
-		this->SetWindowText("age");
+		this->SetWindowText(_T("age"));
 	} else {
-		this->SetWindowText("age - Decrypt file");
+		this->SetWindowText(_T("age - Decrypt file"));
 	}
 
 cleanup:
 	if (passphrase != NULL) {
-		SecureZeroMemory(passphrase, strlen(passphrase));
+		SecureZeroMemory(passphrase, _tcslen(passphrase) * sizeof(TCHAR));
 	}
 	if (passphraseUtf8 != NULL) {
 		SecureZeroMemory(passphraseUtf8, strlen(passphraseUtf8));
@@ -632,7 +603,7 @@ cleanup:
 	free(recipientUtf8);
 	free(cOptions);
 	delete outputDiag;
-	if (!rustMessage.Left(7).Compare("Success")) {
+	if (!rustMessage.Left(7).Compare(_T("Success"))) {
 		EndDialog(IDOK);
 	}
 
@@ -660,15 +631,15 @@ void CAgeDlg::OnBnClickedIdentityRecipient()
 BOOL CAboutDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-	char* aboutMsg =
-		"age is a simple, modern and secure file encryption tool, format, and Go library.\r\n\r\n"
-		"To generate a new identity, right-click a folder background and select \"Generate new age identity\".\r\n"
-		"To encrypt a file, right-click it and select \"Encrypt with age\".\r\n"
-		"To decrypt a file, double-click it and enter the passphrase or select the identity file.\r\n"
-		"SSH private and public keys may be used in place of native age identities and recipients.\r\n\r\n"
-		"age (original Go implementation by Ben Cartwright-Cox and Filippo Valsorda): https://age-encryption.org\r\n"
-		"rage (Rust implementation on which this is based, by Jack Grigg): https://str4d.xyz/rage\r\n"
-		"winage (this project): https://winage.spiegl.dev";
+	LPCTSTR aboutMsg =
+		_T("age is a simple, modern and secure file encryption tool, format, and Go library.\r\n\r\n")
+		_T("To generate a new identity, right-click a folder background and select \"Generate new age identity\".\r\n")
+		_T("To encrypt a file, right-click it and select \"Encrypt with age\".\r\n")
+		_T("To decrypt a file, double-click it and enter the passphrase or select the identity file.\r\n")
+		_T("SSH private and public keys may be used in place of native age identities and recipients.\r\n\r\n")
+		_T("age (original Go implementation by Ben Cartwright-Cox and Filippo Valsorda): https://age-encryption.org\r\n")
+		_T("rage (Rust implementation on which this is based, by Jack Grigg): https://str4d.xyz/rage\r\n")
+		_T("winage (this project): https://winage.spiegl.dev");
 	this->GetDlgItem(IDC_ABOUT_MSG)->SetWindowText(aboutMsg);
 
 	return TRUE;  // return TRUE unless you set the focus to a control

@@ -45,6 +45,6 @@ Windows hands a program the `PATH` its parent had, so a `PATH` you changed after
 
 # Restrictions
 
-- File names and typed passphrases are limited to your system's ANSI code page. Characters outside it, such as a Japanese file name on a Western install, are replaced with `?` by Windows before winage sees them.
+- Plugins that prompt for something other than a passphrase, such as a hardware key serial, get no answer and carry on without it.
 
 

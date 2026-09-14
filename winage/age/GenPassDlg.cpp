@@ -11,7 +11,7 @@
 
 IMPLEMENT_DYNAMIC(GenPassDlg, CDialogEx)
 
-GenPassDlg::GenPassDlg(char* msg, CWnd* pParent /*=nullptr*/)
+GenPassDlg::GenPassDlg(LPCTSTR msg, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_GEN_PASS_DIALOG, pParent)
 {
 	this->msg = msg;

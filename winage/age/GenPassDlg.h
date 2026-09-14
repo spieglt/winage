@@ -8,9 +8,9 @@ class GenPassDlg : public CDialogEx
 	DECLARE_DYNAMIC(GenPassDlg)
 
 public:
-	GenPassDlg(char* msg, CWnd* pParent = nullptr);   // standard constructor
+	GenPassDlg(LPCTSTR msg, CWnd* pParent = nullptr);   // standard constructor
 	virtual ~GenPassDlg();
-	char* msg;
+	LPCTSTR msg;
 
 
 // Dialog Data

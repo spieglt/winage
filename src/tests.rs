@@ -547,3 +547,116 @@ fn plain_identity_files_still_work_with_callbacks_installed() {
         let _ = fs::remove_file(p);
     }
 }
+
+// The front end is a Unicode build, so it hands us UTF-8 converted straight from
+// UTF-16 with no code page in between. These cover what that makes reachable and the
+// old MBCS build could not express.
+
+/// A path no single Windows ANSI code page can represent: four scripts plus an
+/// astral-plane character, which is a surrogate pair in UTF-16 and four bytes in UTF-8.
+const MIXED_SCRIPT: &str = "日本語-Ελληνικά-Русский-עברית-🔐";
+
+#[test]
+fn mixed_script_paths_round_trip() {
+    let plain = scratch(&format!("{}.txt", MIXED_SCRIPT));
+    let enc = scratch(&format!("{}.txt.age", MIXED_SCRIPT));
+    let dec = scratch(&format!("{}.out.txt", MIXED_SCRIPT));
+    fs::write(&plain, b"many scripts").unwrap();
+
+    let msg = run(&plain, &enc, true, Some("pw"), None, None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+    assert!(enc.exists(), "encrypted file not written to the mixed-script path");
+
+    let msg = run(&enc, &dec, false, Some("pw"), None, None, false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"many scripts");
+
+    // The success message carries the path back out to the front end intact.
+    assert!(msg.contains(MIXED_SCRIPT), "{}", msg);
+
+    for p in [plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn non_ascii_passphrase_round_trips() {
+    // A passphrase outside the code page used to be '?'-substituted before winage saw
+    // it, which silently produced a file the real age CLI could not open.
+    let passphrase = "правильная-лошадь-🔑-日本";
+    let plain = scratch("pw-unicode.txt");
+    let enc = scratch("pw-unicode.txt.age");
+    let dec = scratch("pw-unicode.out.txt");
+    fs::write(&plain, b"unicode passphrase").unwrap();
+
+    let msg = run(&plain, &enc, true, Some(passphrase), None, None, false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, Some(passphrase), None, None, false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"unicode passphrase");
+
+    // A passphrase that differs only past the ASCII range must still fail.
+    let dec2 = scratch("pw-unicode.out2.txt");
+    let msg = run(&enc, &dec2, false, Some("правильная-лошадь-🔑-日语"), None, None, false);
+    assert!(msg.starts_with("Error"), "{}", msg);
+
+    for p in [plain, enc, dec, dec2] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn mixed_script_identity_and_recipient_file() {
+    let id = make_identity(&format!("{}-id.txt", MIXED_SCRIPT));
+    let list = scratch(&format!("{}-recipients.txt", MIXED_SCRIPT));
+    fs::write(&list, format!("{}\n", public_key_of(&id))).unwrap();
+
+    let plain = scratch(&format!("{}-payload.txt", MIXED_SCRIPT));
+    let enc = scratch(&format!("{}-payload.txt.age", MIXED_SCRIPT));
+    let dec = scratch(&format!("{}-payload.out.txt", MIXED_SCRIPT));
+    fs::write(&plain, b"recipient file with a unicode name").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&list), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"recipient file with a unicode name");
+
+    for p in [id, list, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
+
+#[test]
+fn mixed_script_encrypted_identity() {
+    let _guard = callback_lock();
+    install_callbacks(Some("パスワード-🔐"));
+
+    let id = make_encrypted_identity(&format!("{}-enc-id.age", MIXED_SCRIPT), "パスワード-🔐");
+    let plain = scratch(&format!("{}-enc.txt", MIXED_SCRIPT));
+    let enc = scratch(&format!("{}-enc.txt.age", MIXED_SCRIPT));
+    let dec = scratch(&format!("{}-enc.out.txt", MIXED_SCRIPT));
+    fs::write(&plain, b"unicode all the way down").unwrap();
+
+    let msg = run(&plain, &enc, true, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully encrypted"), "{}", msg);
+
+    let msg = run(&enc, &dec, false, None, None, Some(&id), false);
+    assert!(msg.starts_with("Successfully decrypted"), "{}", msg);
+    assert_eq!(fs::read(&dec).unwrap(), b"unicode all the way down");
+
+    // The prompt names the file, so the path survives the trip back out too.
+    let prompts = PROMPTS.lock().unwrap().clone();
+    assert!(
+        prompts.iter().any(|p| p.contains(MIXED_SCRIPT)),
+        "{:?}",
+        prompts
+    );
+
+    clear_callbacks();
+    for p in [id, plain, enc, dec] {
+        let _ = fs::remove_file(p);
+    }
+}
