@@ -20,6 +20,12 @@ ConfirmPassDlg::ConfirmPassDlg(CWnd* pParent /*=nullptr*/)
 
 ConfirmPassDlg::~ConfirmPassDlg()
 {
+	// The caller zeroes this after comparing, but only when it gets that far; cancelling
+	// the dialog would otherwise leave the passphrase in the freed buffer.
+	if (!confirmedPass.IsEmpty()) {
+		SecureZeroMemory(confirmedPass.GetBuffer(), confirmedPass.GetLength() * sizeof(TCHAR));
+		confirmedPass.ReleaseBuffer(0);
+	}
 }
 
 void ConfirmPassDlg::DoDataExchange(CDataExchange* pDX)
@@ -45,15 +51,8 @@ void ConfirmPassDlg::OnBnClickedOk()
 
 BOOL ConfirmPassDlg::PreTranslateMessage(MSG* pMsg)
 {
-	if (pMsg->message == WM_KEYDOWN)
-	{
-		if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
-		{
-			CWnd* wnd = GetFocus();
-			if (wnd && IsEditOrEditBrowse(wnd)) {
-				((CEdit*)wnd)->SetSel(0, -1);
-			}
-		}
+	if (IsSelectAllKey(pMsg)) {
+		SelectAllInFocusedEdit();
 	}
 	return CDialogEx::PreTranslateMessage(pMsg);
 }

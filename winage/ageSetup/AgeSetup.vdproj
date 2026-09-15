@@ -1,4 +1,4 @@
-﻿"DeployProject"
+"DeployProject"
 {
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
@@ -13,6 +13,12 @@
 "SccProvider" = "8:"
     "Hierarchy"
     {
+        "Entry"
+        {
+        "MsmKey" = "8:_486B1BD2A0ACE837E81126E1CD8AA8F6"
+        "OwnerKey" = "8:_54B17737546444F1BC4AAD88F0AD272E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
         "Entry"
         {
         "MsmKey" = "8:_54B17737546444F1BC4AAD88F0AD272E"
@@ -46,6 +52,18 @@
         "Entry"
         {
         "MsmKey" = "8:_BFDFDD7DA9EE76AEC0DE884C740E7D4B"
+        "OwnerKey" = "8:_54B17737546444F1BC4AAD88F0AD272E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C88F8BF928B8400E80B05F11C3862323"
+        "OwnerKey" = "8:_54B17737546444F1BC4AAD88F0AD272E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D0112F234A21FCD5693BD4E014F9908D"
         "OwnerKey" = "8:_54B17737546444F1BC4AAD88F0AD272E"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -142,6 +160,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_486B1BD2A0ACE837E81126E1CD8AA8F6"
+            {
+            "SourcePath" = "8:ntdll.dll"
+            "TargetName" = "8:ntdll.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_2AFCF8CFC88A4F948E7183CB3D6FEFF6"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_612E7E56B7AB9860F044FF192B4DAC64"
             {
             "SourcePath" = "8:MSIMG32.dll"
@@ -226,6 +264,46 @@
             {
             "SourcePath" = "8:gdiplus.dll"
             "TargetName" = "8:gdiplus.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_2AFCF8CFC88A4F948E7183CB3D6FEFF6"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C88F8BF928B8400E80B05F11C3862323"
+            {
+            "SourcePath" = "8:api-ms-win-core-synch-l1-2-0.dll"
+            "TargetName" = "8:api-ms-win-core-synch-l1-2-0.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_2AFCF8CFC88A4F948E7183CB3D6FEFF6"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D0112F234A21FCD5693BD4E014F9908D"
+            {
+            "SourcePath" = "8:bcryptprimitives.dll"
+            "TargetName" = "8:bcryptprimitives.dll"
             "Tag" = "8:"
             "Folder" = "8:_2AFCF8CFC88A4F948E7183CB3D6FEFF6"
             "Condition" = "8:"
@@ -328,9 +406,24 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_575DEC4A596D405DA4998C3E817815D8"
+            {
+            "Name" = "8:Windows 10 or later"
+            "Condition" = "8:WIN10ORLATER"
+            "Message" = "8:winage requires Windows 10 or later."
+            "InstallUrl" = "8:"
+            }
         }
         "Locator"
         {
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_A0E42EE3A5F04DF29D295CC5C585E952"
+            {
+            "Name" = "8:Windows 10 or later"
+            "Root" = "2:1"
+            "RegKey" = "8:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+            "Value" = "8:CurrentMajorVersionNumber"
+            "Property" = "8:WIN10ORLATER"
+            }
         }
         "MsiBootstrapper"
         {
@@ -341,15 +434,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:age file encryption"
-        "ProductCode" = "8:{CCB0124E-92D1-46B5-9832-0F8263D327DB}"
-        "PackageCode" = "8:{9BD9E5AF-D198-4926-9F42-9B9AD2E88D7B}"
+        "ProductCode" = "8:{47CD4170-6758-42F3-B602-8EAF9AD8FC3B}"
+        "PackageCode" = "8:{16F077B5-A985-4CFD-99CB-CE72DC249AF7}"
         "UpgradeCode" = "8:{B4B77189-236F-416E-A750-10D67E34D847}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:FALSE"
+        "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:2.0.0"
         "Manufacturer" = "8:age"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://winage.spiegl.dev/"
@@ -464,8 +557,8 @@
                                     {
                                     "Name" = "8:shell"
                                     "Condition" = "8:"
-                                    "AlwaysCreate" = "11:TRUE"
-                                    "DeleteAtUninstall" = "11:TRUE"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
                                     "Transitive" = "11:FALSE"
                                         "Keys"
                                         {
@@ -473,8 +566,8 @@
                                             {
                                             "Name" = "8:Generate new age identity"
                                             "Condition" = "8:"
-                                            "AlwaysCreate" = "11:FALSE"
-                                            "DeleteAtUninstall" = "11:FALSE"
+                                            "AlwaysCreate" = "11:TRUE"
+                                            "DeleteAtUninstall" = "11:TRUE"
                                             "Transitive" = "11:FALSE"
                                                 "Keys"
                                                 {
@@ -542,8 +635,8 @@
                                     {
                                     "Name" = "8:Encrypt with age"
                                     "Condition" = "8:"
-                                    "AlwaysCreate" = "11:FALSE"
-                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "AlwaysCreate" = "11:TRUE"
+                                    "DeleteAtUninstall" = "11:TRUE"
                                     "Transitive" = "11:FALSE"
                                         "Keys"
                                         {
@@ -551,8 +644,8 @@
                                             {
                                             "Name" = "8:command"
                                             "Condition" = "8:"
-                                            "AlwaysCreate" = "11:TRUE"
-                                            "DeleteAtUninstall" = "11:TRUE"
+                                            "AlwaysCreate" = "11:FALSE"
+                                            "DeleteAtUninstall" = "11:FALSE"
                                             "Transitive" = "11:FALSE"
                                                 "Keys"
                                                 {

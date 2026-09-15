@@ -68,6 +68,31 @@ BOOL CAgeApp::InitInstance()
 	// such as the name of your company or organization
 	SetRegistryKey(_T("age file encryption"));
 
+	// age finds plugin binaries (age-plugin-*.exe) via PATH; append our own
+	// directory so plugins dropped next to winage.exe are found too.
+	wchar_t exePath[MAX_PATH];
+	DWORD exePathLen = GetModuleFileNameW(NULL, exePath, MAX_PATH);
+	if (exePathLen > 0 && exePathLen < MAX_PATH) {
+		wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+		if (lastSlash != NULL) {
+			*lastSlash = L'\0';
+			DWORD pathLen = GetEnvironmentVariableW(L"PATH", NULL, 0); // includes null byte
+			size_t newLen = (size_t)pathLen + wcslen(exePath) + 2;
+			wchar_t* newPath = (wchar_t*)malloc(newLen * sizeof(wchar_t));
+			if (newPath != NULL) {
+				newPath[0] = L'\0';
+				if (pathLen > 0 && GetEnvironmentVariableW(L"PATH", newPath, pathLen) > 0) {
+					wcscat_s(newPath, newLen, L";");
+				}
+				wcscat_s(newPath, newLen, exePath);
+				SetEnvironmentVariableW(L"PATH", newPath);
+				free(newPath);
+			}
+		}
+	}
+
+	RegisterAgeCallbacks();
+
 	CAgeDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();

@@ -11,7 +11,7 @@
 
 IMPLEMENT_DYNAMIC(GenPassDlg, CDialogEx)
 
-GenPassDlg::GenPassDlg(char* msg, CWnd* pParent /*=nullptr*/)
+GenPassDlg::GenPassDlg(LPCTSTR msg, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_GEN_PASS_DIALOG, pParent)
 {
 	this->msg = msg;
@@ -29,22 +29,10 @@ void GenPassDlg::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(GenPassDlg, CDialogEx)
-	ON_EN_CHANGE(GENERATED_PASSWORD_BOX, &GenPassDlg::OnEnChangePasswordBox)
 END_MESSAGE_MAP()
 
 
 // GenPassDlg message handlers
-
-
-void GenPassDlg::OnEnChangePasswordBox()
-{
-	// If this is a RICHEDIT control, the control will not
-	// send this notification unless you override the CDialogEx::OnInitDialog()
-	// function and call CRichEditCtrl().SetEventMask()
-	// with the ENM_CHANGE flag ORed into the mask.
-
-	// Add your control notification handler code here
-}
 
 
 BOOL GenPassDlg::OnInitDialog()
@@ -63,22 +51,9 @@ BOOL GenPassDlg::OnInitDialog()
 
 BOOL GenPassDlg::PreTranslateMessage(MSG* pMsg)
 {
-	if (pMsg->message == WM_KEYDOWN)
-	{
-		if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
-		{
-			CWnd* wnd = GetFocus();
-			if (wnd && IsEditOrEditBrowse(wnd)) {
-				((CEdit*)wnd)->SetSel(0, -1);
-			}
-		}
-	}
-	else if (pMsg->message == WM_LBUTTONUP)
-	{
-		CWnd* wnd = GetFocus();
-		if (wnd && IsEditOrEditBrowse(wnd)) {
-			((CEdit*)wnd)->SetSel(0, -1);
-		}
+	// Clicking the generated passphrase reselects it, so it stays easy to copy.
+	if (IsSelectAllKey(pMsg) || pMsg->message == WM_LBUTTONUP) {
+		SelectAllInFocusedEdit();
 	}
 	return CDialogEx::PreTranslateMessage(pMsg);
 }

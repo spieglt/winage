@@ -1,9 +1,8 @@
 /target
-Cargo.lock
 .vs
 Debug
 Release
 x64
-*.vcxproj.filters
 *.vcxproj.user
-UpgradeLog.htm
+*.aps
+UpgradeLog*.htm

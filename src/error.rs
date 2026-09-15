@@ -1,12 +1,21 @@
 use std::fmt;
 use std::io;
 
+use age::cli_common::ReadError;
+
 pub(crate) enum EncryptError {
     Age(age::EncryptError),
     InvalidRecipient(String),
     Io(io::Error),
     PassphraseMissing,
+    PluginResolve(age::plugin::ResolveError),
     UnsupportedKey(String, age::ssh::UnsupportedKey),
+}
+
+impl From<age::plugin::ResolveError> for EncryptError {
+    fn from(e: age::plugin::ResolveError) -> Self {
+        EncryptError::PluginResolve(e)
+    }
 }
 
 impl From<age::EncryptError> for EncryptError {
@@ -33,6 +42,7 @@ impl fmt::Display for EncryptError {
             ),
             EncryptError::Io(e) => write!(f, "{}", e),
             EncryptError::PassphraseMissing => write!(f, "Passphrase not provided"),
+            EncryptError::PluginResolve(e) => write!(f, "{}", e),
             EncryptError::UnsupportedKey(filename, k) => k.display(f, Some(filename.as_str())),
         }
     }
@@ -40,10 +50,10 @@ impl fmt::Display for EncryptError {
 
 pub(crate) enum DecryptError {
     Age(age::DecryptError),
-    IdentityNotFound(String),
+    Identities(ReadError),
     Io(io::Error),
     MissingIdentities,
-    UnsupportedKey(String, age::ssh::UnsupportedKey),
+    MissingPassphrase,
 }
 
 impl From<age::DecryptError> for DecryptError {
@@ -58,33 +68,20 @@ impl From<io::Error> for DecryptError {
     }
 }
 
+impl From<ReadError> for DecryptError {
+    fn from(e: ReadError) -> Self {
+        DecryptError::Identities(e)
+    }
+}
+
 impl fmt::Display for DecryptError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DecryptError::Age(e) => write!(f, "{}", e),
-            DecryptError::IdentityNotFound(filename) => write!(
-                f, "Identity file not found: {}", filename.as_str()
-            ),
+            DecryptError::Identities(e) => write!(f, "{}", e),
             DecryptError::Io(e) => write!(f, "{}", e),
             DecryptError::MissingIdentities => write!(f, "Missing identities."),
-            DecryptError::UnsupportedKey(filename, k) => k.display(f, Some(filename.as_str())),
+            DecryptError::MissingPassphrase => write!(f, "Passphrase not provided"),
         }
-    }
-}
-
-pub(crate) enum Error {
-    Decryption(DecryptError),
-    Encryption(EncryptError),
-}
-
-impl From<DecryptError> for Error {
-    fn from(e: DecryptError) -> Self {
-        Error::Decryption(e)
-    }
-}
-
-impl From<EncryptError> for Error {
-    fn from(e: EncryptError) -> Self {
-        Error::Encryption(e)
     }
 }

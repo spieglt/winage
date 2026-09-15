@@ -9,7 +9,15 @@ https://user-images.githubusercontent.com/22626146/139507406-08803f91-f7d7-4c15-
 
 # Installation
 
+Windows 10 or later. Version 2 is built with a Rust toolchain that requires it.
+
 Install the MSI on the [releases](https://github.com/spieglt/winage/releases) page.
+
+The installer isn't code signed, so Windows shows "Windows protected your PC" the first time you run it. Select `More info`, then `Run anyway`. The UAC prompt will name an unknown publisher.
+
+Each release carries a build provenance attestation, so you can confirm an installer came from this repository before running it:
+
+    gh attestation verify ageSetup.msi --repo spieglt/winage
 
 # Use
 
@@ -21,14 +29,22 @@ To decrypt an `.age` file, double-click it and specify the passphrase or identit
 
 To encrypt to multiple recipients, specify a text file with one recipient on each line. To encrypt to a single recipient, you can paste it directly.
 
+If your identity file is itself encrypted to a passphrase, winage asks for that passphrase when it opens the file.
+
+# Plugins
+
+age plugins such as `age-plugin-yubikey` and `age-plugin-pq` work with winage. Put the plugin's `.exe` either in a directory on your `PATH` or in the winage install folder next to `age.exe`, then use its recipients and identities as you would native ones.
+
+Windows hands a program the `PATH` its parent had, so a `PATH` you changed after signing in won't reach winage until you sign out and back in. Dropping the plugin next to `age.exe` avoids that.
+
 # Compilation instructions
 
-1. Install [Rust](https://www.rust-lang.org/tools/install), open `winage`, and run `cargo build --release`.
+1. Install [Rust](https://www.rust-lang.org/tools/install), open `winage`, and run `cargo build --release`. Run `cargo test` to exercise the encryption and decryption paths.
 
 2. Install and open Visual Studio 2019. Go to `Extensions` > `Manage Extensions` and install `Microsoft Visual Studio Installer Projects`. Open the `winage\winage\age.sln` Solution, select `Release`, `x64`, and build.
 
 # Restrictions
 
-- Does not handle passphrase-protected identity files.
+- Plugins that prompt for something other than a passphrase, such as a hardware key serial, get no answer and carry on without it.
 
 
