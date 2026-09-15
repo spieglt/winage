@@ -82,7 +82,10 @@ jobs:
         with:
           subject-path: ageSetup.msi
 
+      # This job never checks out the repository, so gh has no local clone to take the
+      # target from and has to be told.
       - name: Attach installer to release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release upload ${{ github.event.release.tag_name }} ageSetup.msi --clobber
