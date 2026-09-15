@@ -40,7 +40,7 @@ Then the rest of the UI, all of which moved:
 - [x] Encrypt through the UI using an identity file.
 - [x] Encrypt an identity file with a passphrase, then use it as the identity for both an encrypt and a decrypt. The prompt should name the file it is asking about, in full, even when that name is non-ASCII. Cancelling should report an error rather than hang.
 - [x] Check the About box renders its text intact, since that string literal moved to `_T()`.
-- [ ] Drop an `age-plugin-*.exe` next to `age.exe` and use it. This is the actual fix for what Achim16 reported, and is the one item the port did not touch.
+- [x] Drop an `age-plugin-*.exe` next to `age.exe` and use it. This is the actual fix for what Achim16 reported, and is the one item the port did not touch. Verified with `age-plugin-simplepq`: encrypt to its recipient and decrypt with its identity, with `.cargo\bin` stripped from `PATH` so the only copy winage could reach was the one in its own install folder.
 - [x] After reinstalling, confirm the install folder holds only `age.exe`.
 - [x] Uninstall and confirm it completes without a registry error, that `Directory\Background\shell` keeps its `cmd` and `Powershell` entries, and that winage's two menu items are gone.
 
