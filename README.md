@@ -11,7 +11,7 @@ https://user-images.githubusercontent.com/22626146/139507406-08803f91-f7d7-4c15-
 
 Windows 10 or later. Version 2 is built with a Rust toolchain that requires it.
 
-Install the MSI on the [releases](https://github.com/spieglt/winage/releases) page.
+Install the MSI on the [releases](https://github.com/spieglt/winage/releases) page or run `winget install spieglt.winage` in PowerShell.
 
 The installer isn't code signed, so Windows shows "Windows protected your PC" the first time you run it. Select `More info`, then `Run anyway`. The UAC prompt will name an unknown publisher.
 
